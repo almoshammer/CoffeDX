@@ -1,0 +1,12 @@
+D:\AWORK\WinForms\CoffeDX\CoffeDX\obj\Debug\CoffeDX.csproj.AssemblyReference.cache
+D:\AWORK\WinForms\CoffeDX\CoffeDX\obj\Debug\CoffeDX.csproj.CoreCompileInputs.cache
+D:\AWORK\WinForms\CoffeDX\CoffeDX\bin\Debug\CoffeDX.dll
+D:\AWORK\WinForms\CoffeDX\CoffeDX\bin\Debug\CoffeDX.pdb
+D:\AWORK\WinForms\CoffeDX\CoffeDX\obj\Debug\CoffeDX.dll
+D:\AWORK\WinForms\CoffeDX\CoffeDX\obj\Debug\CoffeDX.pdb
+D:\AWORK\WinForms\CoffeDX\CoffeDX\bin\Debug\DBreeze.dll
+D:\AWORK\WinForms\CoffeDX\CoffeDX\bin\Debug\DBreezeBased.dll
+D:\AWORK\WinForms\CoffeDX\CoffeDX\bin\Debug\protobuf-net.dll
+D:\AWORK\WinForms\CoffeDX\CoffeDX\bin\Debug\DBreeze.xml
+D:\AWORK\WinForms\CoffeDX\CoffeDX\bin\Debug\DBreezeBased.xml
+D:\AWORK\WinForms\CoffeDX\CoffeDX\obj\Debug\CoffeDX.csproj.CopyComplete
