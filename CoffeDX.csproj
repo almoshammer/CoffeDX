@@ -51,6 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Database\MSAccessDB.cs" />
     <Compile Include="Database\KeyValDB.cs" />
     <Compile Include="Database\SQLiteDB.cs" />
     <Compile Include="DQuery.cs" />
@@ -59,6 +60,7 @@
     <Compile Include="DConvert.cs" />
     <Compile Include="Query\Mapping\DColumnAttribute.cs" />
     <Compile Include="Query\Mapping\DEntityAttribute.cs" />
+    <Compile Include="Query\Mapping\DKeyValue.cs" />
     <Compile Include="Shared\CheckType.cs" />
     <Compile Include="Shared\Database.cs" />
     <Compile Include="Shared\ExHandler.cs" />
