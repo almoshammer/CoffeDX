@@ -51,6 +51,51 @@ namespace CoffeDX.Database
                 throw ex;
             }
         }
+        public static void SetObject(string key, object value)
+        {
+            Db.Insert("global", key, value);
+            Db.Commit();
+        }
+        public static object GetObject(string key)
+        {
+            return Db.Select<string, object>("global", key).Value;
+        }
+        public static void SetBoolean(string key, bool value)
+        {
+            Db.Insert("global", key, value);
+            Db.Commit();
+        }
+        public static bool GetBoolean(string key)
+        {
+            return Db.Select<string, bool>("global", key).Value;
+        }
+        public static void SetString(string key, string value)
+        {
+            Db.Insert("global", key, value);
+            Db.Commit();
+        }
+        public static string GetString(string key)
+        {
+            return Db.Select<string, string>("global", key).Value;
+        }
+        public static void SetLong(string key, long value)
+        {
+            Db.Insert("global", key, value);
+            Db.Commit();
+        }
+        public static long GetLong(string key)
+        {
+            return Db.Select<string, long>("global", key).Value;
+        }
+        public static void SetInt(string key, int value)
+        {
+            Db.Insert("global", key, value);
+            Db.Commit();
+        }
+        public static int GetInt(string key)
+        {
+            return Db.Select<string, int>("global", key).Value;
+        }
         public static void GetProps(ref object obj)
         {
             try
