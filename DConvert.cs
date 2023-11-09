@@ -13,7 +13,7 @@ namespace CoffeDX
 {
     public class DConvert
     {
-        public int ToInt(object value, int defaultValue = 0)
+        public static int ToInt(object value, int defaultValue = 0)
         {
             if (!DValidate.IsNumber(value))
             {
@@ -21,7 +21,7 @@ namespace CoffeDX
             }
             return int.Parse(ToNumber(value));
         }
-        public long ToLong(object value, long defaultValue = 0)
+        public static long ToLong(object value, long defaultValue = 0)
         {
             if (!DValidate.IsNumber(value))
             {
@@ -29,7 +29,7 @@ namespace CoffeDX
             }
             return long.Parse(ToNumber(value));
         }
-        private string ToNumber(object value)
+        private static string ToNumber(object value)
         {
             if (!DValidate.IsNumber(value)) return "0";
 
@@ -39,7 +39,7 @@ namespace CoffeDX
             foreach (char c in value.ToString().Trim()) if (char.IsDigit(c)) serial += c + "";
             return (serial.Length == 0 || serial == "-") ? "0" : serial;
         }
-        public double ToDouble(object value, double defaultValue = 0)
+        public static double ToDouble(object value, double defaultValue = 0)
         {
             if (!DValidate.IsNumber(value))
             {
@@ -47,7 +47,7 @@ namespace CoffeDX
             }
             return Convert.ToDouble(ToNumber(value));
         }
-        public decimal ToDecimal(object value, decimal defaultValue = 0)
+        public static decimal ToDecimal(object value, decimal defaultValue = 0)
         {
             if (!DValidate.IsNumber(value))
             {
@@ -55,7 +55,7 @@ namespace CoffeDX
             }
             return Convert.ToDecimal(ToNumber(value));
         }
-        public bool ToBool(object st)
+        public static bool ToBool(object st)
         {
             if (st == null)
             {
@@ -74,7 +74,7 @@ namespace CoffeDX
 
             return Convert.ToBoolean(st);
         }
-        public A ToEntity<A>(DataRow dr)
+        public static A ToEntity<A>(DataRow dr)
         {
             A entity = Activator.CreateInstance<A>();
             PropertyInfo[] properties = typeof(A).GetProperties();
@@ -83,7 +83,7 @@ namespace CoffeDX
                 if (DValidate.Exists(prop, dr)) CheckType.setProperyValue(entity, prop, dr[prop.Name.ToLower()]);
             return entity;
         }
-        public List<object> ToList(DataTable table)
+        public static List<object> ToList(DataTable table)
         {
             if (table == null) return null;
 
@@ -104,7 +104,7 @@ namespace CoffeDX
 
             return list;
         }
-        public List<R> ToList<R>(DataTable table)
+        public static List<R> ToList<R>(DataTable table)
         {
             if (table == null) return null;
 
@@ -127,7 +127,7 @@ namespace CoffeDX
 
             return list;
         }
-        public System.Drawing.Image ToImage(byte[] bytes)
+        public static System.Drawing.Image ToImage(byte[] bytes)
         {
             if (bytes == null || bytes.Length == 1) return null;
             try
@@ -148,7 +148,7 @@ namespace CoffeDX
         /// </summary>
         /// <param name="image"></param>
         /// <returns>byte[]</returns>
-        public byte[] ToArray(System.Drawing.Image image)
+        public static byte[] ToArray(System.Drawing.Image image)
         {
             if (image == null)
             {
