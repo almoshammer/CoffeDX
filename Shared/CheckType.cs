@@ -75,6 +75,7 @@ namespace CoffeDX.Shared
         public static bool isString(Type type) => type == typeof(string);
         public static bool isLong(Type type) => type == typeof(long) || type == typeof(ulong);
         public static bool isDouble(Type type) => type == typeof(double) || type == typeof(SqlDouble);
+        public static bool isFloat(Type type) => type == typeof(float);
         public static bool isDecimal(Type type) => type == typeof(decimal) || type == typeof(SqlDecimal);
         public static bool isDateTime(Type type) => type == typeof(DateTime) || type == typeof(DateTime?);
         public static bool isSqlDateTime(Type type) => type == typeof(SqlDateTime) || type == typeof(SqlDateTime?);
@@ -112,7 +113,7 @@ namespace CoffeDX.Shared
             {
                 //set default value
                 if (isString(prop.PropertyType)) { prop.SetValue(entity, ""); return; }
-                if (isInt(prop.PropertyType) || isDouble(prop.PropertyType) || isDouble(prop.PropertyType))
+                if (isInt(prop.PropertyType) || isDouble(prop.PropertyType) || isDouble(prop.PropertyType) || isFloat(prop.PropertyType))
                 { prop.SetValue(entity, 0); return; }
 
                 if (isDateTime(prop.PropertyType))
