@@ -10,6 +10,11 @@ namespace CoffeDX.Query.Mapping
     {
         public string key { get; set; }
         public object value { get; set; }
+        public DKeyValue(string key, object value)
+        {
+            this.key = key;
+            this.value = value;
+        }
 
     }
 }

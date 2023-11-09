@@ -54,6 +54,7 @@
     <Compile Include="Database\MSAccessDB.cs" />
     <Compile Include="Database\KeyValDB.cs" />
     <Compile Include="Database\SQLiteDB.cs" />
+    <Compile Include="Delegates.cs" />
     <Compile Include="DQuery.cs" />
     <Compile Include="DValidate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

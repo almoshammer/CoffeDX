@@ -1,8 +1,13 @@
-﻿using CoffeDX.Query.Mapping;
+﻿using CoffeDX.Database;
+using CoffeDX.Query.Mapping;
 using CoffeDX.Shared;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.OleDb;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Reflection;
 
 namespace CoffeDX
@@ -522,4 +527,61 @@ namespace CoffeDX
         #endregion
     }
 
+    public class AccessQuery : AccessDB
+    {
+
+        List<string> tablesList = new List<string>();
+        private List<string> selectList = new List<string>();
+        private List<DKeyValue> whereList = new List<DKeyValue>(); // add support sub where
+
+
+        public AccessQuery Select(params string[] fields)
+        {
+            selectList.Clear();
+            selectList.AddRange(fields);
+            return this;
+        }
+        public AccessQuery Where(string key, object value)
+        {
+            whereList.Add(new DKeyValue(key, value));
+            return this;
+        }
+
+        public AccessQuery(params string[] tables)
+        {
+            tablesList.AddRange(tables);
+        }
+
+        public AccessQuery()
+        {
+
+        }
+        public DataTable get()
+        {
+            string _query = generateQuery();
+            return getConnection(result =>
+            {
+                var conn = (OleDbConnection)result;
+                DataTable dt = new DataTable();
+                if (conn.State == ConnectionState.Open) dt.Load(new OleDbCommand(_query, conn).ExecuteReader());
+
+                return dt;
+            });
+        }
+        public string generateQuery()
+        {
+            /* Select */
+            string _query = "SELECT " + string.Join(",", selectList);
+            /* /Select */
+
+            /* Tables */
+            _query += " " + string.Join(",", tablesList);
+            /* /Tables */
+
+            /* Where */
+            _query += " " + string.Join("AND", whereList.Select(item => item.key + '=' + item.value));
+            /* /Where */
+            return _query;
+        }
+    }
 }
