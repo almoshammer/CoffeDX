@@ -54,9 +54,11 @@
     <Compile Include="Database\MSAccessDB.cs" />
     <Compile Include="Database\KeyValDB.cs" />
     <Compile Include="Database\SQLiteDB.cs" />
+    <Compile Include="Database\SQLServer.cs" />
     <Compile Include="Delegates.cs" />
     <Compile Include="DQuery.cs" />
     <Compile Include="DValidate.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DConvert.cs" />
     <Compile Include="Query\Mapping\DColumnAttribute.cs" />
@@ -69,6 +71,7 @@
     <Compile Include="Shared\HotManager.cs" />
     <Compile Include="Shared\IQuery.cs" />
     <Compile Include="Shared\_Constants.cs" />
+    <Compile Include="Test\TestModel.cs" />
     <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
   </ItemGroup>
   <ItemGroup>
