@@ -29,6 +29,10 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="DBreeze, Version=1.76.2016.829, Culture=neutral, PublicKeyToken=174b57f1c155f3c6, processorArchitecture=MSIL">
       <HintPath>packages\DBreezeBased.1.27\lib\net45\DBreeze.dll</HintPath>
@@ -63,7 +67,11 @@
     <Compile Include="DConvert.cs" />
     <Compile Include="Query\Mapping\DColumnAttribute.cs" />
     <Compile Include="Query\Mapping\DEntityAttribute.cs" />
+    <Compile Include="Query\Mapping\DForeignKeyAttribute.cs" />
+    <Compile Include="Query\Mapping\DKeyTwoValues.cs" />
     <Compile Include="Query\Mapping\DKeyValue.cs" />
+    <Compile Include="Query\Mapping\DIncrementalAttribute.cs" />
+    <Compile Include="Query\Mapping\DPrimaryKeyAttribute.cs" />
     <Compile Include="Shared\CheckType.cs" />
     <Compile Include="Shared\Database.cs" />
     <Compile Include="Shared\ExHandler.cs" />
@@ -71,7 +79,10 @@
     <Compile Include="Shared\HotManager.cs" />
     <Compile Include="Shared\IQuery.cs" />
     <Compile Include="Shared\_Constants.cs" />
+    <Compile Include="Test\BaseModel.cs" />
+    <Compile Include="Test\ParentModel.cs" />
     <Compile Include="Test\TestModel.cs" />
+    <Compile Include="XQuery.cs" />
     <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
   </ItemGroup>
   <ItemGroup>

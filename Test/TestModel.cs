@@ -10,6 +10,7 @@ namespace CoffeDX.Test
     [DEntity]
     public class TestModel
     {
+        [DPrimaryKey]
         public int ID { get; set; }
         public string Name { get; set; }
         public float Balance { get; set; }
@@ -17,5 +18,7 @@ namespace CoffeDX.Test
         public DateTime created_time { get; set; }
         public bool is_active { get; set; }
 
+        [DForeignKey(typeof(ParentModel))]
+        public int ParentId { get; set; }
     }
 }

@@ -12,9 +12,7 @@ D:\AWORK\WinForms\CoffeDX\CoffeDX\bin\Debug\DBreezeBased.xml
 D:\AWORK\WinForms\CoffeDX\CoffeDX\obj\Debug\CoffeDX.csproj.CopyComplete
 E:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.csproj.AssemblyReference.cache
 E:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.csproj.CoreCompileInputs.cache
-E:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.dll
 E:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.pdb
-E:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\CoffeDX.dll
 E:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\CoffeDX.pdb
 E:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\DBreeze.dll
 E:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\DBreezeBased.dll
@@ -22,3 +20,5 @@ E:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\protobuf-net.dll
 E:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\DBreeze.xml
 E:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\DBreezeBased.xml
 E:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.csproj.CopyComplete
+E:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\CoffeDX.dll
+E:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.dll
