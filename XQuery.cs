@@ -16,8 +16,9 @@ namespace CoffeDX
     public delegate void DgWhere(SubWhere query);
     public class XQuery : ISelect
     {
-        private SelectQuery _select;
+        private static SelectQuery _select;
         private string tableName { get; set; } = null;
+        public XQuery()  {  }
         public XQuery(object table)
         {
             if (typeof(string) == table.GetType()) this.tableName = table.ToString();
@@ -64,7 +65,7 @@ namespace CoffeDX
             UpdateQuery _update = new UpdateQuery(model);
             var _query = _update.GetQuery(_select.whereList.ToString());
 
-            SQLServer.getConnection<int>(conn =>
+            return SQLServer.getConnection(conn =>
             {
                 try
                 {
@@ -77,9 +78,8 @@ namespace CoffeDX
                     return -1;
                 }
             });
-            return 0;
         }
-        public int Delete(object model)
+        public static int Delete(object model)
         {
             DeleteQuery _delete = new DeleteQuery(model);
             var _query = _delete.GetQuery(_select.whereList.ToString());
@@ -148,6 +148,54 @@ namespace CoffeDX
             _select.whereList.Append(")");
             return this;
         }
+
+        public DataRow First()
+        {
+            if (_select == null) _select = new SelectQuery(tableName);
+
+            string _query = _select.GetQuery();
+            return SQLServer.getConnection(conn =>
+            {
+                DataTable table = new DataTable();
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    table.Load(cmd.ExecuteReader());
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                if (table.Rows.Count == 0) table.Rows.Add();
+                return table.Rows[0];
+            });
+        }
+
+        public T First<T>()
+        {
+            if (_select == null) _select = new SelectQuery(tableName);
+
+            T instance = Activator.CreateInstance<T>();
+
+            string _query = _select.GetQuery();
+            return SQLServer.getConnection(conn =>
+            {
+                DataTable table = new DataTable();
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    table.Load(cmd.ExecuteReader());
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                if (table.Rows.Count == 0) table.Rows.Add();
+                DConvert.ToEntity<T>(table.Rows[0]);
+                return instance;
+            });
+        }
+
         private class SelectQuery
         {
             public List<string> tables = new List<string>();
@@ -188,11 +236,12 @@ namespace CoffeDX
                 }
                 foreach (var item in model.GetType().GetProperties())
                 {
+                    if (Attribute.IsDefined(item, typeof(DPreventUpdateAttribute))) continue;
 
                     if (Attribute.IsDefined(item, typeof(DPrimaryKeyAttribute)))
                     {
                         var pkVal = item.GetValue(model);
-                        if (pkVal.GetType() == typeof(string)) pkVal = $"'{pkVal.ToString()}'";
+                        if (pkVal.GetType() == typeof(string)) pkVal = $"'{pkVal}'";
                         pK = $"WHERE {item.Name}={pkVal}";
                     }
                     if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;
@@ -285,6 +334,32 @@ namespace CoffeDX
 
         }
 
+        public class Pagination
+        {
+            public int page { get; set; } = 1;
+            public int total { get; set; } = 0;
+            public int pageSize { get; set; } = 0;
+            public virtual DataTable Next()
+            {
+                DataTable dt = new DataTable();
+                return dt;
+            }
+            public virtual DataTable Prev()
+            {
+                DataTable dt = new DataTable();
+                return dt;
+            }
+            public virtual DataTable First()
+            {
+                DataTable dt = new DataTable();
+                return dt;
+            }
+            public virtual DataTable Last()
+            {
+                DataTable dt = new DataTable();
+                return dt;
+            }
+        }
     }
 
     public interface ISelect : IWhere
@@ -296,6 +371,8 @@ namespace CoffeDX
     public interface IWhere : SubWhere
     {
         DataTable Get();
+        DataRow First();
+        T First<T>();
         int Update(object model);
     }
     public interface SubWhere

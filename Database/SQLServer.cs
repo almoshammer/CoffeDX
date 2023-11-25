@@ -74,7 +74,7 @@ namespace CoffeDX.Database
             return @object(conn);
         }
 
-        public static void Migrate(Assembly assembly)
+        public static void Migrate(Assembly assembly,bool allowDrop=false)
         {
             StringBuilder tables = new StringBuilder();
             StringBuilder fKeys = new StringBuilder();
@@ -84,6 +84,10 @@ namespace CoffeDX.Database
                 if (tp.IsClass && tp.IsPublic && Attribute.IsDefined(tp, typeof(DEntityAttribute)))
                 {
                     string table = $"t_{tp.Name}";
+                    if(allowDrop)
+                    tables.Append($"If Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}') Drop Table dbo.{table};\n");
+
+                    tables.Append($"If Not Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}')\n");
                     tables.Append($"Create Table {table} (\n");
                     var props = tp.GetProperties();
                     foreach (var prop in props)
@@ -125,7 +129,7 @@ namespace CoffeDX.Database
                     return false;
                 }
 
-            }, "master");
+            }, DBName);
 
         }
         private static string GetPrimaryKey(Type type)
