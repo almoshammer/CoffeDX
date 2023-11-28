@@ -1,5 +1,6 @@
 ﻿using CoffeDX.Database;
 using CoffeDX.Query.Mapping;
+using CoffeDX.Shared;
 using CoffeDX.Test;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace CoffeDX
     {
         private static SelectQuery _select;
         private string tableName { get; set; } = null;
-        public XQuery()  {  }
+        public XQuery() { }
         public XQuery(object table)
         {
             if (typeof(string) == table.GetType()) this.tableName = table.ToString();
@@ -78,6 +79,120 @@ namespace CoffeDX
                     return -1;
                 }
             });
+        }
+        public int Insert(object model)
+        {
+            InsertQuery _insert = new InsertQuery(model);
+
+            var affectedRows = -1;
+            var _query = _insert.GetQuery();
+            return SQLServer.getConnection(conn =>
+            {
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    if (_query.Contains("Inserted"))
+                    {
+                        var result = (int)cmd.ExecuteScalar();
+                        int.TryParse(result + "", out affectedRows);
+                    }
+                    else
+                    {
+                        affectedRows = cmd.ExecuteNonQuery();
+                    }
+                    return affectedRows;
+
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                    return -1;
+                }
+            });
+        }
+
+
+        public int InsertTable(DataTable table)
+        {
+            try
+            {
+                string message = "";
+                if (table == null || table.Rows.Count == 0)
+                {
+                    message = "لايوجد سجلات لاضافتها";
+                    return 0;
+                }
+
+                if (table.TableName == null || table.TableName.Length == 0)
+                {
+                    message = "يجب تحديد اسم جدول";
+                    MessageBox.Show(message);
+                    return 0;
+                }
+                return SQLServer.getConnection(@conn =>
+                {
+                    SqlBulkCopy sqlBulkCopy = new SqlBulkCopy((SqlConnection)@conn);
+                    sqlBulkCopy.DestinationTableName = table.TableName;
+                    sqlBulkCopy.WriteToServer(table);
+                    return 1;
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return 0;
+            }
+        }
+
+        public int InsertList<T>(List<T> list, string tableName)
+        {
+            try
+            {
+                DataTable table = new DataTable();
+
+                PropertyInfo[] columns = typeof(T).GetProperties();
+                foreach (PropertyInfo item in columns)
+                {
+                    table.Columns.Add(item.Name, item.PropertyType);
+                }
+
+                foreach(T item in list)
+                {
+                    DataRow dr = table.NewRow();
+                    foreach(PropertyInfo col in columns)
+                    {
+                        dr[col.Name] = col.GetValue(item);
+                    }
+                }
+
+                table.TableName = tableName;
+
+                string message = "";
+                if (table == null || table.Rows.Count == 0)
+                {
+                    message = "لايوجد سجلات لاضافتها";
+                    return 0;
+                }
+
+                if (table.TableName == null || table.TableName.Length == 0)
+                {
+                    message = "يجب تحديد اسم جدول";
+                    MessageBox.Show(message);
+                    return 0;
+                }
+                return SQLServer.getConnection(@conn =>
+                {
+                    SqlBulkCopy sqlBulkCopy = new SqlBulkCopy((SqlConnection)@conn);
+                    sqlBulkCopy.DestinationTableName = table.TableName;
+                    sqlBulkCopy.WriteToServer(table);
+                    return 1;
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return 0;
+            }
         }
         public static int Delete(object model)
         {
@@ -149,6 +264,30 @@ namespace CoffeDX
             return this;
         }
 
+        public object Max(string fieldName, object @default)
+        {
+            if (_select == null) _select = new SelectQuery(tableName);
+            _select.select($"MAX({fieldName})");
+
+            string _query = _select.GetQuery();
+            return SQLServer.getConnection(conn =>
+            {
+                DataTable table = new DataTable();
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    table.Load(cmd.ExecuteReader());
+                    if (table.Rows.Count == 0) return @default;
+                    return table.Rows[0][fieldName];
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                    return @default;
+                }
+
+            });
+        }
         public DataRow First()
         {
             if (_select == null) _select = new SelectQuery(tableName);
@@ -270,6 +409,8 @@ namespace CoffeDX
             private string table { get; set; }
             private List<string> keys = new List<string>();
             private List<string> values = new List<string>();
+
+            private List<string> outFileds = new List<string>();
             public object model { get; set; }
             private string pK;
 
@@ -284,7 +425,11 @@ namespace CoffeDX
                 }
                 foreach (var item in model.GetType().GetProperties())
                 {
-                    if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;
+                    if (Attribute.IsDefined(item, typeof(DIncrementalAttribute)))
+                    {
+                        outFileds.Add(item.Name);
+                        continue;
+                    }
                     string fieldValue;
                     object fV = item.GetValue(model);
                     if (fV == null || fV.ToString().Length == 0) continue;
@@ -302,7 +447,14 @@ namespace CoffeDX
             public string GetQuery()
             {
                 if (this.keys.Count == 0) return "";
-                return $"INSERT INTO {this.table}({string.Join(",", this.keys)}) VALUES ({string.Join(",", this.values)})";
+
+                var _insterted = "";
+                if (outFileds.Count > 0)
+                {
+                    _insterted += $" OUTPUT {string.Join(",", outFileds)}";
+                }
+
+                return $"INSERT INTO {this.table}({string.Join(",", this.keys)}) {_insterted} VALUES ({string.Join(",", this.values)})";
             }
         }
         private class DeleteQuery

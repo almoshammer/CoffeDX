@@ -47,6 +47,15 @@ namespace CoffeDX
             }
             return Convert.ToDouble(ToNumber(value));
         }
+        public static DateTime ToDateTime(DateTime? date)
+        {
+            if (date != null && date.Value != DateTime.MinValue)
+            {
+                return date.Value;
+            }
+            else
+                return new DateTime();
+        }
         public static decimal ToDecimal(object value, decimal defaultValue = 0)
         {
             if (!DValidate.IsNumber(value))
