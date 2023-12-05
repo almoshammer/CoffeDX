@@ -17,21 +17,36 @@ namespace CoffeDX
     public delegate void DgWhere(SubWhere query);
     public class XQuery : ISelect
     {
-        private static SelectQuery _select;
+        private SelectQuery _select;
         private string tableName { get; set; } = null;
-        public XQuery() { }
+        public XQuery() {
+            _select = new SelectQuery(null);
+        }
         public XQuery(object table)
         {
             if (typeof(string) == table.GetType()) this.tableName = table.ToString();
+            else if (table is Type)
+            {
+                var _type = (table as Type);
+
+                this.tableName = "t_" + _type.Name;
+                if (Attribute.IsDefined(_type, typeof(DEntityAttribute)))
+                {
+                    var prop = _type.GetCustomAttribute<DEntityAttribute>();
+                    if (prop.Name != null && prop.Name.Length > 0) this.tableName = "t_" + prop.Name;
+                }
+            }
             else
             {
-                this.tableName = table.GetType().Name;
+                this.tableName = "t_" + table.GetType().Name;
                 if (Attribute.IsDefined(table.GetType(), typeof(DEntityAttribute)))
                 {
                     var prop = table.GetType().GetCustomAttribute<DEntityAttribute>();
-                    if (prop.Name != null && prop.Name.Length > 0) this.tableName = prop.Name;
+                    if (prop.Name != null && prop.Name.Length > 0) this.tableName = "t_" + prop.Name;
                 }
             }
+            if(_select == null)
+            _select = new SelectQuery(this.tableName);
         }
 
         public ISelect Select(params string[] fields)
@@ -61,9 +76,9 @@ namespace CoffeDX
                 return table;
             });
         }
-        public int Update(object model)
+        public int Update(object model = null)
         {
-            UpdateQuery _update = new UpdateQuery(model);
+            UpdateQuery _update = new UpdateQuery(model ?? this.tableName);
             var _query = _update.GetQuery(_select.whereList.ToString());
 
             return SQLServer.getConnection(conn =>
@@ -156,10 +171,10 @@ namespace CoffeDX
                     table.Columns.Add(item.Name, item.PropertyType);
                 }
 
-                foreach(T item in list)
+                foreach (T item in list)
                 {
                     DataRow dr = table.NewRow();
-                    foreach(PropertyInfo col in columns)
+                    foreach (PropertyInfo col in columns)
                     {
                         dr[col.Name] = col.GetValue(item);
                     }
@@ -194,7 +209,7 @@ namespace CoffeDX
                 return 0;
             }
         }
-        public static int Delete(object model)
+        public int Delete(object model = null)
         {
             DeleteQuery _delete = new DeleteQuery(model);
             var _query = _delete.GetQuery(_select.whereList.ToString());
@@ -214,16 +229,64 @@ namespace CoffeDX
             });
             return 0;
         }
-        public ISelect Join(string table, string field1, string field2)
+        public ISelect Join(object table, string field1, string field2)
         {
-            _select.tables.Add(table);
-            _select.innerJoinList.Append($" Join {table} ON {field1}={field2}");
+            string _table = "";
+
+            if (typeof(string) == table.GetType()) _table = table.ToString();
+            else if (table is Type)
+            {
+                var _type = (table as Type);
+
+                _table = "t_" + _type.Name;
+                if (Attribute.IsDefined(_type, typeof(DEntityAttribute)))
+                {
+                    var prop = _type.GetCustomAttribute<DEntityAttribute>();
+                    if (prop.Name != null && prop.Name.Length > 0) _table = "t_" + prop.Name;
+                }
+            }
+            else
+            {
+                _table = "t_" + table.GetType().Name;
+                if (Attribute.IsDefined(table.GetType(), typeof(DEntityAttribute)))
+                {
+                    var prop = table.GetType().GetCustomAttribute<DEntityAttribute>();
+                    if (prop.Name != null && prop.Name.Length > 0) _table = "t_" + prop.Name;
+                }
+            }
+
+            _select.tables.Add(_table);
+            _select.innerJoinList.Append($" Join {_table} ON {field1}={field2}");
             return this;
         }
-        public ISelect LeftJoin(string table, string field1, string field2)
+        public ISelect LeftJoin(object table, string field1, string field2)
         {
-            _select.tables.Add(table);
-            _select.leftJoinList.Append($" Left Join {table} ON {field1}={field2}");
+            string _table = "";
+
+            if (typeof(string) == table.GetType()) _table = table.ToString();
+            else if (table is Type)
+            {
+                var _type = (table as Type);
+
+                _table = "t_" + _type.Name;
+                if (Attribute.IsDefined(_type, typeof(DEntityAttribute)))
+                {
+                    var prop = _type.GetCustomAttribute<DEntityAttribute>();
+                    if (prop.Name != null && prop.Name.Length > 0) _table = "t_" + prop.Name;
+                }
+            }
+            else
+            {
+                _table = "t_" + table.GetType().Name;
+                if (Attribute.IsDefined(table.GetType(), typeof(DEntityAttribute)))
+                {
+                    var prop = table.GetType().GetCustomAttribute<DEntityAttribute>();
+                    if (prop.Name != null && prop.Name.Length > 0) _table = "t_" + prop.Name;
+                }
+            }
+
+            _select.tables.Add(_table);
+            _select.leftJoinList.Append($" Left Join {_table} ON {field1}={field2}");
             return this;
         }
 
@@ -232,7 +295,7 @@ namespace CoffeDX
             if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
             else _select.whereList.Append(" And ");
             string vStr = "";
-            if (value.GetType() == typeof(string)) vStr = $"'{value}'";
+            if (value.GetType() == typeof(string)) vStr = $"'{value}'"; else vStr = $"{value}";
             _select.whereList.Append($"{key}={vStr}");
             return this;
         }
@@ -250,7 +313,7 @@ namespace CoffeDX
             if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
             else _select.whereList.Append(" Or ");
             string vStr = "";
-            if (value.GetType() == typeof(string)) vStr = $"'{value}'";
+            if (value.GetType() == typeof(string)) vStr = $"'{value}'"; else vStr = $"{value}";
             _select.whereList.Append($"{key}={vStr}");
             return this;
         }
@@ -292,7 +355,7 @@ namespace CoffeDX
         {
             if (_select == null) _select = new SelectQuery(tableName);
 
-            string _query = _select.GetQuery();
+            string _query = _select.GetQueryFirst();
             return SQLServer.getConnection(conn =>
             {
                 DataTable table = new DataTable();
@@ -316,7 +379,7 @@ namespace CoffeDX
 
             T instance = Activator.CreateInstance<T>();
 
-            string _query = _select.GetQuery();
+            string _query = _select.GetQueryFirst();
             return SQLServer.getConnection(conn =>
             {
                 DataTable table = new DataTable();
@@ -355,6 +418,11 @@ namespace CoffeDX
             {
                 if (this.fields.Count == 0) this.fields.Add("*");
                 return $"SELECT {string.Join(",", this.fields)} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
+            }
+            public string GetQueryFirst()
+            {
+                if (this.fields.Count == 0) this.fields.Add("*");
+                return $"SELECT TOP 1 {string.Join(",", this.fields)} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
             }
         }
         private class UpdateQuery
@@ -412,7 +480,7 @@ namespace CoffeDX
 
             private List<string> outFileds = new List<string>();
             public object model { get; set; }
-            private string pK;
+            //private string pK;
 
             public InsertQuery(object model)
             {
@@ -461,15 +529,35 @@ namespace CoffeDX
         {
             public string table { get; set; }
             public object model { get; set; }
+            public string pk = null;
             public DeleteQuery(object model)
             {
                 this.model = model;
-                if (model.GetType() == typeof(string)) this.table = model.ToString(); else this.table = model.GetType().Name;
+                if (model == null) return;
+
+                if (model.GetType() == typeof(string)) this.table = model.ToString();
+                else
+                {
+                    this.table = model.GetType().Name;
+                    foreach (PropertyInfo prop in model.GetType().GetProperties())
+                    {
+                        if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute)))
+                        {
+                            pk = prop.Name + "=" + prop.GetValue(model);
+                        }
+                    }
+                }
+
+
             }
             public string GetQuery(string whereList)
             {
                 string whPrivate = whereList + "";
-                if (whereList == null && whereList.Length == 0)
+                if (pk != null && pk.Length > 0)
+                {
+                    whPrivate = $"WHERE {pk}";
+                }
+                else if (whereList == null && whereList.Length == 0)
                 {
                     foreach (var item in this.model.GetType().GetProperties())
                     {
@@ -516,8 +604,8 @@ namespace CoffeDX
 
     public interface ISelect : IWhere
     {
-        ISelect Join(string table, string field1, string field2);
-        ISelect LeftJoin(string table, string field1, string field2);
+        ISelect Join(object table, string field1, string field2);
+        ISelect LeftJoin(object table, string field1, string field2);
 
     }
     public interface IWhere : SubWhere
@@ -525,7 +613,9 @@ namespace CoffeDX
         DataTable Get();
         DataRow First();
         T First<T>();
-        int Update(object model);
+        int Update(object model = null);
+        int Delete(object model = null);
+
     }
     public interface SubWhere
     {

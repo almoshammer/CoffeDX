@@ -79,6 +79,10 @@ namespace CoffeDX.Database
             StringBuilder tables = new StringBuilder();
             StringBuilder fKeys = new StringBuilder();
 
+
+            StringBuilder dropRelations = new StringBuilder();
+
+
             foreach (var tp in assembly.GetTypes())
             {
                 if (tp.IsClass && tp.IsPublic && Attribute.IsDefined(tp, typeof(DEntityAttribute)))
@@ -86,6 +90,7 @@ namespace CoffeDX.Database
                     string table = $"t_{tp.Name}";
                     if(allowDrop)
                     tables.Append($"If Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}') Drop Table dbo.{table};\n");
+
 
                     tables.Append($"If Not Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}')\n");
                     tables.Append($"Create Table {table} (\n");
@@ -98,10 +103,19 @@ namespace CoffeDX.Database
                         {
                             var fAttr = prop.GetCustomAttribute<DForeignKeyAttribute>();
                             var parentKey = fAttr.ParentKey;
+
+                            var on_constr_event = fAttr.constraint_event == ON_CONSTRAINT_EVENT.CASECASE ? "ON DELETE CASECASE":"";
+
                             if (parentKey == null || parentKey.Length == 0) 
                                 parentKey = GetPrimaryKey(fAttr.ParentModel);
                             // TODO create forieghn key with casecade on delete only, and non constrained field if value not found
-                            fKeys.Append($"Alter Table dbo.{table} With NoCheck Add Constraint fk_{table}_TO_t_{fAttr.ParentModel.Name} Foreign Key({prop.Name}) References dbo.t_{fAttr.ParentModel.Name}({parentKey}) ON DELETE CASCADE;\n");
+                            var ctr_name = $"fk_{table}_TO_t_{fAttr.ParentModel.Name}";
+                            if (allowDrop) {
+                                dropRelations.Append($"If Exists(Select * From Information_Schema.REFERENTIAL_CONSTRAINTS Where CONSTRAINT_NAME = '{ctr_name}')\n");
+                                dropRelations.Append($"Alter table {table} Drop Constraint {ctr_name};\n");
+                            }
+                            fKeys.Append($"If Not Exists(Select * From Information_Schema.REFERENTIAL_CONSTRAINTS Where CONSTRAINT_NAME = '{ctr_name}')\n");
+                            fKeys.Append($"Alter Table dbo.{table} With NoCheck Add Constraint {ctr_name} Foreign Key({prop.Name}) References dbo.t_{fAttr.ParentModel.Name}({parentKey}) {on_constr_event};\n");
                             // new DKeyValue(prop.Name, fAttr.ParentModel)
                         }
                         tables.Append($"{typeName},\n");
@@ -117,8 +131,13 @@ namespace CoffeDX.Database
                     string strTables = tables.ToString();
                     string strKeys = fKeys.ToString();
 
-                    var cmd = new SqlCommand(strTables, (SqlConnection)conn);
+                    /*1*/
+                    var cmd = new SqlCommand(dropRelations.ToString(), (SqlConnection)conn);
                     cmd.ExecuteNonQuery();
+                    /*2*/
+                    cmd.CommandText = strTables;
+                    cmd.ExecuteNonQuery();
+                    /*3*/
                     cmd.CommandText = strKeys;
                     cmd.ExecuteNonQuery();
                     return true;
