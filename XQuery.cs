@@ -19,7 +19,8 @@ namespace CoffeDX
     {
         private SelectQuery _select;
         private string tableName { get; set; } = null;
-        public XQuery() {
+        public XQuery()
+        {
             _select = new SelectQuery(null);
         }
         public XQuery(object table)
@@ -45,10 +46,27 @@ namespace CoffeDX
                     if (prop.Name != null && prop.Name.Length > 0) this.tableName = "t_" + prop.Name;
                 }
             }
-            if(_select == null)
-            _select = new SelectQuery(this.tableName);
+            if (_select == null)
+                _select = new SelectQuery(this.tableName);
         }
 
+        public DataTable ExecTable(string _query)
+        {
+            return SQLServer.getConnection(conn =>
+            {
+                DataTable result = new DataTable();
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    result.Load(cmd.ExecuteReader());
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                return result;
+            });
+        }
         public ISelect Select(params string[] fields)
         {
             if (_select == null)
@@ -78,7 +96,11 @@ namespace CoffeDX
         }
         public int Update(object model = null)
         {
-            UpdateQuery _update = new UpdateQuery(model ?? this.tableName);
+
+            UpdateQuery _update = new UpdateQuery(model);
+
+            _update.table = this.tableName;
+
             var _query = _update.GetQuery(_select.whereList.ToString());
 
             return SQLServer.getConnection(conn =>
@@ -398,12 +420,23 @@ namespace CoffeDX
             });
         }
 
+        public IWhere OrderBy(params string[] fields)
+        {
+            if (_select == null) _select = new SelectQuery(this.tableName);
+            _select.OrderBy(fields);
+            return this;
+        }
+
         private class SelectQuery
         {
             public List<string> tables = new List<string>();
             public StringBuilder innerJoinList = new StringBuilder();
             public StringBuilder leftJoinList = new StringBuilder();
             public StringBuilder whereList = new StringBuilder();
+
+            public List<string> orderByList = new List<string>();
+
+
             public SelectQuery(string table)
             {
                 this.tables.Add(table);
@@ -412,6 +445,11 @@ namespace CoffeDX
             public SelectQuery select(params string[] fields)
             {
                 this.fields.AddRange(fields);
+                return this;
+            }
+            public SelectQuery OrderBy(params string[] fields)
+            {
+                orderByList.AddRange(fields);
                 return this;
             }
             public string GetQuery()
@@ -427,7 +465,7 @@ namespace CoffeDX
         }
         private class UpdateQuery
         {
-            private string table { get; set; }
+            public string table { get; set; }
             private List<string> fields = new List<string>();
             public object model { get; set; }
             private string pK;
@@ -435,7 +473,8 @@ namespace CoffeDX
             public UpdateQuery(object model)
             {
                 this.model = model;
-                if (model.GetType() == typeof(string)) this.table = model.ToString(); else this.table = model.GetType().Name;
+                if (model.GetType() == typeof(string)) this.table = model.ToString();
+
                 if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
                 {
                     var attr = model.GetType().GetCustomAttribute<DEntityAttribute>();
@@ -458,9 +497,9 @@ namespace CoffeDX
 
                     if (fV.GetType() == typeof(string))
                     {
-                        fieldValue = $"'{fV.ToString()}'";
+                        fieldValue = $"'{fV}'";
                     }
-                    else fieldValue = fV.ToString();
+                    else fieldValue = $"{fV}";
                     fields.Add($"{item.Name}={fieldValue}");
                 }
             }
@@ -612,6 +651,7 @@ namespace CoffeDX
     {
         DataTable Get();
         DataRow First();
+        IWhere OrderBy(params string[] fields);
         T First<T>();
         int Update(object model = null);
         int Delete(object model = null);
