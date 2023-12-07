@@ -50,7 +50,7 @@ namespace CoffeDX
                 _select = new SelectQuery(this.tableName);
         }
 
-        public DataTable ExecTable(string _query)
+        public static DataTable ExecTable(string _query)
         {
             return SQLServer.getConnection(conn =>
             {
