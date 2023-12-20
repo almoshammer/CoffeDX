@@ -19,11 +19,27 @@ namespace CoffeDX
             if (input == null) return "null";
             if (input.GetType() == typeof(bool)) return DConvert.ToInt(input) + "";
             if (input is string) return $"'{input}'";
-            if (input is DateTime) return ((DateTime)input).ToString("yyyy-MM-ddTHH:mm:sszz");
+            if (input is DateTime)
+            {
+                if (input.ToString().Contains("01/01/1990")) return "null";
+                return "'" + ((DateTime)input).ToString("yyyy-MM-ddTHH:mm:ss") + "'";
+            }
             //yyyy-MM-dd HH:mm:ss.fff
-            if (input is DateTime?) return ((DateTime?)input).Value.ToString("yyyy-MM-ddTHH:mm:sszz");
-            if (input is SqlDateTime) return ((SqlDateTime)input).Value.ToString("yyyy-MM-ddTHH:mm:sszz");
-            if (input is SqlDateTime?) return ((SqlDateTime?)input).Value.Value.ToString("yyyy-MM-ddTHH:mm:sszz");
+            if (input is DateTime?)
+            {
+                if (input.ToString().Contains("01/01/1990")) return "null";
+                return "'" + ((DateTime?)input).Value.ToString("yyyy-MM-ddTHH:mm:ss") + "'";
+            }
+            if (input is SqlDateTime)
+            {
+                if (input.ToString().Contains("01/01/1990")) return "null";
+                return "'" + ((SqlDateTime)input).Value.ToString("yyyy-MM-ddTHH:mm:ss") + "'";
+            }
+            if (input is SqlDateTime?)
+            {
+                if (input.ToString().Contains("01/01/1990")) return "null";
+                return "'" + ((SqlDateTime?)input).Value.Value.ToString("yyyy-MM-ddTHH:mm:ss") + "'";
+            }
 
             if (input is int? || input is long? || input is decimal? || input is double?)
             {

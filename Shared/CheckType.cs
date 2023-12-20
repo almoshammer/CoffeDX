@@ -67,7 +67,7 @@ namespace CoffeDX.Shared
             return Nullable.GetUnderlyingType(typeof(V)) != null;
         }
         public static bool isInt(Type type) => (type == typeof(int) || type == typeof(long) || type == typeof(ushort) || type == typeof(uint));
-        public static bool isNullableInt(Type type) => (type == typeof(int) || type == typeof(long?) || type == typeof(ushort?) || type == typeof(uint));
+        public static bool isNullableInt(Type type) => (type == typeof(int?) || type == typeof(long?) || type == typeof(ushort?) || type == typeof(uint));
         public static bool isNullableDecimal(Type type) => (type == typeof(decimal) || type == typeof(SqlDecimal));
         public static bool isNullableDouble(Type type) => (type == typeof(double?) || type == typeof(SqlDouble?));
         public static bool isNullableDateTime(Type type) => (type == typeof(DateTime?));
