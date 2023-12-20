@@ -645,6 +645,7 @@ namespace CoffeDX
         T First<T>();
         int Update(object model = null);
         int Delete(object model = null);
+        object Max(string fieldName, object @default);
 
     }
     public interface SubWhere
