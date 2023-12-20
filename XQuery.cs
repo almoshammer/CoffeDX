@@ -522,11 +522,12 @@ namespace CoffeDX
             public InsertQuery(object model)
             {
                 this.model = model;
-                if (model.GetType() == typeof(string)) this.table = model.ToString(); else this.table = model.GetType().Name;
+                if (model.GetType() == typeof(string)) this.table = "t_" + model.ToString(); else this.table = "t_" + model.GetType().Name;
                 if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
                 {
                     var attr = model.GetType().GetCustomAttribute<DEntityAttribute>();
-                    if (attr.Name != null && attr.Name.Length > 0) this.table = attr.Name;
+                    if (attr.Name != null && attr.Name.Length > 0) this.table = "t_" + attr.Name;
+                    else this.table = "t_"+model.GetType().Name;
                 }
                 foreach (var item in model.GetType().GetProperties())
                 {
