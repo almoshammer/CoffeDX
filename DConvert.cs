@@ -16,14 +16,20 @@ namespace CoffeDX
     {
         public static string ToSqlValue(object input)
         {
-            if(input == null) return null;
-            if(input.GetType() == typeof(bool)) return DConvert.ToInt(input)+"";
+            if (input == null) return "null";
+            if (input.GetType() == typeof(bool)) return DConvert.ToInt(input) + "";
             if (input is string) return $"'{input}'";
-            if(input is DateTime) return ((DateTime)input).ToString("yyyy-MM-ddTHH:mm:sszz");
+            if (input is DateTime) return ((DateTime)input).ToString("yyyy-MM-ddTHH:mm:sszz");
             //yyyy-MM-dd HH:mm:ss.fff
             if (input is DateTime?) return ((DateTime?)input).Value.ToString("yyyy-MM-ddTHH:mm:sszz");
             if (input is SqlDateTime) return ((SqlDateTime)input).Value.ToString("yyyy-MM-ddTHH:mm:sszz");
             if (input is SqlDateTime?) return ((SqlDateTime?)input).Value.Value.ToString("yyyy-MM-ddTHH:mm:sszz");
+
+            if (input is int? || input is long? || input is decimal? || input is double?)
+            {
+                if (DConvert.ToInt(input.ToString()) == 0) return "null";
+            }
+
             return input.ToString();
         }
         public static int ToInt(object value, int defaultValue = 0)
@@ -46,7 +52,7 @@ namespace CoffeDX
         }
         private static string ToNumber(object value)
         {
-            if (value !=null && value.GetType() == typeof(bool)) return Convert.ToInt16(value);+"";
+            if (value !=null && value.GetType() == typeof(bool)) return Convert.ToInt16(value)+"";
             if (!DValidate.IsNumber(value)) return "0";
 
             value = value.ToString().Trim();
