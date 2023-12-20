@@ -62,7 +62,7 @@ namespace CoffeDX
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message);
+                    throw new Exception(ex.Message);
                 }
                 return result;
             });
@@ -89,7 +89,7 @@ namespace CoffeDX
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message);
+                    throw new Exception(ex.Message);
                 }
                 return table;
             });
@@ -112,7 +112,7 @@ namespace CoffeDX
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message);
+                    throw new Exception(ex.Message);
                     return -1;
                 }
             });
@@ -142,7 +142,7 @@ namespace CoffeDX
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message);
+                    throw new Exception(ex.Message);
                     return -1;
                 }
             });
@@ -163,7 +163,7 @@ namespace CoffeDX
                 if (table.TableName == null || table.TableName.Length == 0)
                 {
                     message = "يجب تحديد اسم جدول";
-                    MessageBox.Show(message);
+                    throw new Exception(message);
                     return 0;
                 }
                 return SQLServer.getConnection(@conn =>
@@ -176,7 +176,7 @@ namespace CoffeDX
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                throw new Exception(ex.Message);
                 return 0;
             }
         }
@@ -214,7 +214,7 @@ namespace CoffeDX
                 if (table.TableName == null || table.TableName.Length == 0)
                 {
                     message = "يجب تحديد اسم جدول";
-                    MessageBox.Show(message);
+                    throw new Exception(message);
                     return 0;
                 }
                 return SQLServer.getConnection(@conn =>
@@ -227,7 +227,7 @@ namespace CoffeDX
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                throw new Exception(ex.Message);
                 return 0;
             }
         }
@@ -245,7 +245,7 @@ namespace CoffeDX
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message);
+                    throw new Exception(ex.Message);
                     return -1;
                 }
             });
@@ -365,7 +365,7 @@ namespace CoffeDX
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message);
+                    throw new Exception(ex.Message);
                     return @default;
                 }
 
@@ -386,7 +386,7 @@ namespace CoffeDX
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message);
+                    throw new Exception(ex.Message);
                 }
                 if (table.Rows.Count == 0) table.Rows.Add();
                 return table.Rows[0];
@@ -410,7 +410,7 @@ namespace CoffeDX
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message);
+                    throw new Exception(ex.Message);
                 }
                 if (table.Rows.Count == 0) table.Rows.Add();
                 DConvert.ToEntity<T>(table.Rows[0]);
