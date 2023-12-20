@@ -352,7 +352,7 @@ namespace CoffeDX
         public object Max(string fieldName, object @default)
         {
             if (_select == null) _select = new SelectQuery(tableName);
-            _select.select($"MAX({fieldName})");
+            _select.select($"IIF(MAX({fieldName}) IS NULL,0,MAX({fieldName}))");
 
             string _query = _select.GetQuery();
             return SQLServer.getConnection(conn =>
