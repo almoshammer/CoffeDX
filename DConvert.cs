@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlTypes;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
@@ -15,10 +16,15 @@ namespace CoffeDX
     {
         public static string ToSqlValue(object input)
         {
-            string result = "";
+            if(input == null) return null;
             if(input.GetType() == typeof(bool)) return DConvert.ToInt(input)+"";
-
-            return result;
+            if (input is string) return $"'{input}'";
+            if(input is DateTime) return ((DateTime)input).ToString("yyyy-MM-ddTHH:mm:sszz");
+            //yyyy-MM-dd HH:mm:ss.fff
+            if (input is DateTime?) return ((DateTime?)input).Value.ToString("yyyy-MM-ddTHH:mm:sszz");
+            if (input is SqlDateTime) return ((SqlDateTime)input).Value.ToString("yyyy-MM-ddTHH:mm:sszz");
+            if (input is SqlDateTime?) return ((SqlDateTime?)input).Value.Value.ToString("yyyy-MM-ddTHH:mm:sszz");
+            return input.ToString();
         }
         public static int ToInt(object value, int defaultValue = 0)
         {

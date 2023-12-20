@@ -527,7 +527,7 @@ namespace CoffeDX
                 {
                     var attr = model.GetType().GetCustomAttribute<DEntityAttribute>();
                     if (attr.Name != null && attr.Name.Length > 0) this.table = "t_" + attr.Name;
-                    else this.table = "t_"+model.GetType().Name;
+                    else this.table = "t_" + model.GetType().Name;
                 }
                 foreach (var item in model.GetType().GetProperties())
                 {
@@ -536,15 +536,9 @@ namespace CoffeDX
                         outFileds.Add(item.Name);
                         continue;
                     }
-                    string fieldValue;
                     object fV = item.GetValue(model);
                     if (fV == null || fV.ToString().Length == 0) continue;
-
-                    if (fV.GetType() == typeof(string))
-                    {
-                        fieldValue = $"'{fV}'";
-                    }
-                    else fieldValue = fV.ToString();
+                    string fieldValue = DConvert.ToSqlValue(fV);
 
                     keys.Add($"{item.Name}");
                     values.Add($"{fieldValue}");
@@ -585,8 +579,6 @@ namespace CoffeDX
                         }
                     }
                 }
-
-
             }
             public string GetQuery(string whereList)
             {
