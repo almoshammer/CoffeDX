@@ -361,9 +361,7 @@ namespace CoffeDX
                 try
                 {
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    table.Load(cmd.ExecuteReader());
-                    if (table.Rows.Count == 0) return @default;
-                    return table.Rows[0][fieldName];
+                    return cmd.ExecuteReader();
                 }
                 catch (Exception ex)
                 {
@@ -528,7 +526,7 @@ namespace CoffeDX
                 if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
                 {
                     var attr = model.GetType().GetCustomAttribute<DEntityAttribute>();
-                    if (attr.Name != null || attr.Name.Length > 0) this.table = attr.Name;
+                    if (attr.Name != null && attr.Name.Length > 0) this.table = attr.Name;
                 }
                 foreach (var item in model.GetType().GetProperties())
                 {

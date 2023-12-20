@@ -63,15 +63,17 @@ namespace CoffeDX.Database
                 }
                 if (conn?.State == System.Data.ConnectionState.Closed)
                     conn?.Open();
+                var result = @object(conn);
+                conn.Close();
+                return result;
             }
             catch (System.Exception ex)
             {
                 MessageBox.Show(ex.Message);
                 // ExHanlder.handle(ex, ExHanlder.ERR.APP, ExHanlder.PROMP_TYPE.MSG, _00CONSTANT.DB_CONN_ERROR1);
                 // Application.Exit();
+                return Activator.CreateInstance<T>();
             }
-
-            return @object(conn);
         }
 
         public static void Migrate(Assembly assembly,bool allowDrop=false)
