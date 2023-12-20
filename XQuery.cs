@@ -538,10 +538,8 @@ namespace CoffeDX
                     }
                     object fV = item.GetValue(model);
                     if (fV == null || fV.ToString().Length == 0) continue;
-                    string fieldValue = DConvert.ToSqlValue(fV);
-
                     keys.Add($"{item.Name}");
-                    values.Add($"{fieldValue}");
+                    values.Add($"{DConvert.ToSqlValue(fV)}");
                 }
             }
             public string GetQuery()
@@ -575,7 +573,7 @@ namespace CoffeDX
                     {
                         if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute)))
                         {
-                            pk = prop.Name + "=" + prop.GetValue(model);
+                            pk = prop.Name + "=" + DConvert.ToSqlValue(prop.GetValue(model));
                         }
                     }
                 }

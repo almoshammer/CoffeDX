@@ -28,7 +28,7 @@ namespace CoffeDX
         }
         public static int ToInt(object value, int defaultValue = 0)
         {
-            if (value.GetType() == typeof(bool)) return Convert.ToInt16(value);
+            if (value !=null && value.GetType() == typeof(bool)) return Convert.ToInt16(value);
             if (!DValidate.IsNumber(value))
             {
                 return defaultValue;
@@ -37,7 +37,7 @@ namespace CoffeDX
         }
         public static long ToLong(object value, long defaultValue = 0)
         {
-            if (value.GetType() == typeof(bool)) return Convert.ToInt16(value);
+            if (value !=null && value.GetType() == typeof(bool)) return Convert.ToInt16(value);;
             if (!DValidate.IsNumber(value))
             {
                 return defaultValue;
@@ -46,7 +46,7 @@ namespace CoffeDX
         }
         private static string ToNumber(object value)
         {
-            if (value.GetType() == typeof(bool)) return Convert.ToInt16(value)+"";
+            if (value !=null && value.GetType() == typeof(bool)) return Convert.ToInt16(value);+"";
             if (!DValidate.IsNumber(value)) return "0";
 
             value = value.ToString().Trim();
@@ -57,7 +57,7 @@ namespace CoffeDX
         }
         public static double ToDouble(object value, double defaultValue = 0)
         {
-            if (value.GetType() == typeof(bool)) return Convert.ToInt16(value);
+            if (value !=null && value.GetType() == typeof(bool)) return Convert.ToInt16(value);;
             if (!DValidate.IsNumber(value))
             {
                 return defaultValue;
@@ -75,7 +75,7 @@ namespace CoffeDX
         }
         public static decimal ToDecimal(object value, decimal defaultValue = 0)
         {
-            if (value.GetType() == typeof(bool)) return Convert.ToInt16(value);
+            if (value !=null && value.GetType() == typeof(bool)) return Convert.ToInt16(value);;
             if (!DValidate.IsNumber(value))
             {
                 return defaultValue;
