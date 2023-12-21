@@ -3,12 +3,14 @@ using CoffeDX.Query.Mapping;
 using CoffeDX.Shared;
 using CoffeDX.Test;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Windows.Forms;
 
 namespace CoffeDX
 {
@@ -101,7 +103,11 @@ namespace CoffeDX
             {
                 try 
                 {
-                    var affectedRows = new SqlCommand(_query, (SqlConnection)conn).ExecuteNonQuery();
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    var lst = _update.GetParams();
+                    for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()]);
+
+                    var affectedRows = cmd.ExecuteNonQuery();
                     return affectedRows;
                 }
                 catch (Exception ex)
@@ -122,6 +128,9 @@ namespace CoffeDX
                 try
                 {
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    var lst = _insert.GetParams();
+                    for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()]);
+
                     if (_query.Contains("Inserted"))
                     {
                         var result = (int)cmd.ExecuteScalar();
@@ -461,6 +470,7 @@ namespace CoffeDX
             private List<string> fields = new List<string>();
             public object model { get; set; }
             private string pK;
+            SortedList paramsList = new SortedList();
 
             public UpdateQuery(object model)
             {
@@ -484,18 +494,11 @@ namespace CoffeDX
                         pK = $"WHERE {item.Name}={pkVal}";
                     }
                     if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;
-                    string fieldValue;
-                    object fV = item.GetValue(model);
-                    if (fV == null || fV.ToString().Length == 0) continue;
-
-                    if (fV.GetType() == typeof(string))
-                    {
-                        fieldValue = $"'{fV}'";
-                    }
-                    else fieldValue = $"{fV}";
-                    fields.Add($"{item.Name}={DConvert.ToSqlValue(fV)}");
+                    fields.Add($"{item.Name}=@{item.Name}");
+                    paramsList.Add($"@{item.Name}", item.GetValue(model));
                 }
             }
+            public SortedList GetParams() => this.paramsList;
             public string GetQuery(string whereList)
             {
                 if (this.fields.Count == 0) return "";
@@ -512,6 +515,7 @@ namespace CoffeDX
 
             private List<string> outFileds = new List<string>();
             public object model { get; set; }
+            private SortedList paramsList = new SortedList();
             //private string pK;
 
             public InsertQuery(object model)
@@ -528,13 +532,13 @@ namespace CoffeDX
                 {
                     if (Attribute.IsDefined(item, typeof(DIncrementalAttribute)))
                     {
-                        outFileds.Add(item.Name);
+                        outFileds.Add("Inserted."+item.Name);
                         continue;
                     }
-                    object fV = item.GetValue(model);
-                    if (fV == null || fV.ToString().Length == 0) continue;
+                    //if (fV == null || fV.ToString().Length == 0) continue;
                     keys.Add($"{item.Name}");
-                    values.Add($"{DConvert.ToSqlValue(fV)}");
+                    values.Add($"@{item.Name}");
+                    paramsList.Add($"@{item.Name}", item.GetValue(model));
                 }
             }
             public string GetQuery()
@@ -549,6 +553,7 @@ namespace CoffeDX
 
                 return $"INSERT INTO {this.table}({string.Join(",", this.keys)}) {_insterted} VALUES ({string.Join(",", this.values)})";
             }
+            public SortedList GetParams() => this.paramsList;
         }
         private class DeleteQuery
         {
