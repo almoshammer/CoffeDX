@@ -104,8 +104,9 @@ namespace CoffeDX
                 try 
                 {
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                  
                     var lst = _update.GetParams();
-                    for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()]);
+                    for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
 
                     var affectedRows = cmd.ExecuteNonQuery();
                     return affectedRows;
@@ -129,7 +130,7 @@ namespace CoffeDX
                 {
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
                     var lst = _insert.GetParams();
-                    for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()]);
+                    for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
 
                     if (_query.Contains("Inserted"))
                     {

@@ -101,6 +101,8 @@ namespace CoffeDX.Database
                     {
                         string typeName = $"{prop.Name} {GetSQLServerFieldType(prop)}";
                         if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute))) typeName += " Primary Key";
+                        if (Attribute.IsDefined(prop, typeof(DIncrementalAttribute))) typeName += " Identity(1,1) ";
+                        
                         else if (Attribute.IsDefined(prop, typeof(DForeignKeyAttribute)))
                         {
                             var fAttr = prop.GetCustomAttribute<DForeignKeyAttribute>();
@@ -169,7 +171,7 @@ namespace CoffeDX.Database
             var tp = prop.PropertyType;
 
             if (tp == typeof(long)) return "BIGINT";
-            if (tp == typeof(byte[])) return "BINARY";
+            if (tp == typeof(byte[])) return "Image";
             if (tp == typeof(bool)) return "BIT";
             if (tp == typeof(string)) return "Varchar(MAX) NULL";
             if (tp == typeof(char)) return "Char";
@@ -178,7 +180,7 @@ namespace CoffeDX.Database
             if (tp == typeof(DateTimeOffset)) return "DateTimeOffset";
 
             if (tp == typeof(long?)) return "BIGINT NULL";
-            if (tp == typeof(byte?[])) return "BINARY NULL";
+            if (tp == typeof(byte?[])) return "Image NULL";
             if (tp == typeof(bool?)) return "BIT NULL";
             if (tp == typeof(char?)) return "Char NULL";
             if (tp == typeof(int?)) return "Int NULL";
