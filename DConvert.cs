@@ -19,6 +19,8 @@ namespace CoffeDX
             if (input == null) return "null";
             if (input.GetType() == typeof(bool)) return DConvert.ToInt(input) + "";
             if (input is string) return $"'{input}'";
+            #region DateTime ---condations
+          
             if (input is DateTime)
             {
                 if (input.ToString().Contains("01/01/1990")) return "null";
@@ -40,12 +42,16 @@ namespace CoffeDX
                 if (input.ToString().Contains("01/01/1990")) return "null";
                 return "'" + ((SqlDateTime?)input).Value.Value.ToString("yyyy-MM-ddTHH:mm:ss") + "'";
             }
-
+            #endregion
             if (input is int? || input is long? || input is decimal? || input is double?)
             {
                 if (DConvert.ToInt(input.ToString()) == 0) return "null";
             }
 
+            if(input is byte[])
+            {
+                return "0x"+BitConverter.ToString(((byte[])input),0).Replace("-",string.Empty);
+            }
             return input.ToString();
         }
         public static int ToInt(object value, int defaultValue = 0)

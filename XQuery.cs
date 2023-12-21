@@ -9,8 +9,6 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace CoffeDX
 {
@@ -96,16 +94,12 @@ namespace CoffeDX
         }
         public int Update(object model = null)
         {
-
             UpdateQuery _update = new UpdateQuery(model);
-
             //_update.table = this.tableName;
-
             var _query = _update.GetQuery(_select.whereList.ToString());
-
             return SQLServer.getConnection(conn =>
             {
-                try
+                try 
                 {
                     var affectedRows = new SqlCommand(_query, (SqlConnection)conn).ExecuteNonQuery();
                     return affectedRows;
