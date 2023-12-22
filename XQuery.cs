@@ -134,8 +134,8 @@ namespace CoffeDX
 
                     if (_query.Contains("Inserted"))
                     {
-                        var result = (int)cmd.ExecuteScalar();
-                        int.TryParse(result + "", out affectedRows);
+                        object result = cmd.ExecuteScalar();
+                        affectedRows = DConvert.ToInt(result);
                     }
                     else
                     {
@@ -531,15 +531,21 @@ namespace CoffeDX
                 }
                 foreach (var item in model.GetType().GetProperties())
                 {
+                    object value = item.GetValue(model);
                     if (Attribute.IsDefined(item, typeof(DIncrementalAttribute)))
                     {
                         outFileds.Add("Inserted."+item.Name);
                         continue;
                     }
+                    if(Attribute.IsDefined(item, typeof(DForeignKeyAttribute)))
+                    {
+                        var number = DConvert.ToLong(value,0);
+                        if (number <= 0) value = null;
+                    }
                     //if (fV == null || fV.ToString().Length == 0) continue;
                     keys.Add($"{item.Name}");
                     values.Add($"@{item.Name}");
-                    paramsList.Add($"@{item.Name}", item.GetValue(model));
+                    paramsList.Add($"@{item.Name}", value);
                 }
             }
             public string GetQuery()
