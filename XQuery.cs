@@ -281,7 +281,7 @@ namespace CoffeDX
                 }
             }
 
-            _select.tables.Add(_table);
+            //_select.tables.Add(_table);
             _select.innerJoinList.Append($" Join {_table} ON {field1}={field2}");
             return this;
         }
