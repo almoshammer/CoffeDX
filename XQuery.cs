@@ -107,10 +107,10 @@ namespace CoffeDX
             var _query = _update.GetQuery(_select.whereList.ToString());
             return SQLServer.getConnection(conn =>
             {
-                try 
+                try
                 {
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                  
+
                     var lst = _update.GetParams();
                     for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
 
@@ -496,13 +496,20 @@ namespace CoffeDX
                 {
                     if (Attribute.IsDefined(item, typeof(DPreventUpdateAttribute))) continue;
 
+
+                    object value = item.GetValue(model);
                     if (Attribute.IsDefined(item, typeof(DPrimaryKeyAttribute)))
                     {
-                        var pkVal = item.GetValue(model);
-                        if (pkVal.GetType() == typeof(string)) pkVal = $"'{pkVal}'";
-                        pK = $"WHERE {item.Name}={pkVal}";
+                        if (item.PropertyType == typeof(string)) value = $"'{value}'";
+                        pK = $"WHERE {item.Name}={value}";
                     }
                     if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;
+
+                    if (Attribute.IsDefined(item, typeof(DForeignKeyAttribute)))
+                    {
+                        var number = DConvert.ToLong(value, 0);
+                        if (number <= 0) value = null;
+                    }
                     fields.Add($"{item.Name}=@{item.Name}");
                     paramsList.Add($"@{item.Name}", item.GetValue(model));
                 }
@@ -542,12 +549,12 @@ namespace CoffeDX
                     object value = item.GetValue(model);
                     if (Attribute.IsDefined(item, typeof(DIncrementalAttribute)))
                     {
-                        outFileds.Add("Inserted."+item.Name);
+                        outFileds.Add("Inserted." + item.Name);
                         continue;
                     }
-                    if(Attribute.IsDefined(item, typeof(DForeignKeyAttribute)))
+                    if (Attribute.IsDefined(item, typeof(DForeignKeyAttribute)))
                     {
-                        var number = DConvert.ToLong(value,0);
+                        var number = DConvert.ToLong(value, 0);
                         if (number <= 0) value = null;
                     }
                     //if (fV == null || fV.ToString().Length == 0) continue;
