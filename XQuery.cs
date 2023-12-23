@@ -500,18 +500,16 @@ namespace CoffeDX
                     object value = item.GetValue(model);
                     if (Attribute.IsDefined(item, typeof(DPrimaryKeyAttribute)))
                     {
-                        if (item.PropertyType == typeof(string)) value = $"'{value}'";
-                        pK = $"WHERE {item.Name}={value}";
+                        pK = $"WHERE {item.Name}=@{item.Name}";
                     }
-                    if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;
-
                     if (Attribute.IsDefined(item, typeof(DForeignKeyAttribute)))
                     {
                         var number = DConvert.ToLong(value, 0);
                         if (number <= 0) value = null;
                     }
-                    fields.Add($"{item.Name}=@{item.Name}");
                     paramsList.Add($"@{item.Name}", item.GetValue(model));
+                    if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;
+                    fields.Add($"{item.Name}=@{item.Name}");
                 }
             }
             public SortedList GetParams() => this.paramsList;
