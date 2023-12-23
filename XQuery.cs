@@ -243,7 +243,7 @@ namespace CoffeDX
         }
         public int Delete(object model = null)
         {
-            DeleteQuery _delete = new DeleteQuery(model);
+            DeleteQuery _delete = new DeleteQuery(model??this.tableName);
             var _query = _delete.GetQuery(_select.whereList.ToString());
 
             SQLServer.getConnection<int>(conn =>
