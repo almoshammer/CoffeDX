@@ -74,6 +74,12 @@ namespace CoffeDX
             _select.select(fields);
             return this;
         }
+        public ISelect Exclude(params string[] fields)
+        {
+            if (_select == null) _select = new SelectQuery(tableName);
+            _select.select(fields);
+            return this;
+        }
         public DataTable Get()
         {
             if (_select == null) _select = new SelectQuery(tableName);
@@ -435,6 +441,8 @@ namespace CoffeDX
             public StringBuilder innerJoinList = new StringBuilder();
             public StringBuilder leftJoinList = new StringBuilder();
             public StringBuilder whereList = new StringBuilder();
+
+            public List<string> _exclude = new List<string>();
 
             public List<string> orderByList = new List<string>();
 
