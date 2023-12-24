@@ -1,16 +1,12 @@
 ﻿using CoffeDX.Database;
 using CoffeDX.Query.Mapping;
-using CoffeDX.Shared;
-using CoffeDX.Test;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Windows.Forms;
 
 namespace CoffeDX
 {
@@ -243,7 +239,7 @@ namespace CoffeDX
         }
         public int Delete(object model = null)
         {
-            DeleteQuery _delete = new DeleteQuery(model??this.tableName);
+            DeleteQuery _delete = new DeleteQuery(model ?? this.tableName);
             var _query = _delete.GetQuery(_select.whereList.ToString());
 
             SQLServer.getConnection<int>(conn =>
@@ -585,10 +581,10 @@ namespace CoffeDX
                 this.model = model;
                 if (model == null) return;
 
-                if (model.GetType() == typeof(string)) this.table = model.ToString();
+                if (model.GetType() == typeof(string)) this.table = "t_"+model.ToString();
                 else
                 {
-                    this.table = model.GetType().Name;
+                    this.table = "t_" + model.GetType().Name;
                     foreach (PropertyInfo prop in model.GetType().GetProperties())
                     {
                         if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute)))
