@@ -480,9 +480,8 @@ namespace CoffeDX
             public UpdateQuery(object model)
             {
                 this.model = model;
-                if (model.GetType() == typeof(string)) this.table = "t_" + model.ToString();
-
-                if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
+                if (model is string) this.table = model.ToString();
+                else if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
                 {
                     var attr = model.GetType().GetCustomAttribute<DEntityAttribute>();
                     if (attr.Name != null && attr.Name.Length > 0) this.table = "t_" + attr.Name;
