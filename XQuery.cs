@@ -367,7 +367,7 @@ namespace CoffeDX
                 try
                 {
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    return cmd.ExecuteReader();
+                    return cmd.ExecuteScalar();
                 }
                 catch (Exception ex)
                 {
