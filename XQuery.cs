@@ -313,7 +313,6 @@ namespace CoffeDX
                 }
             }
 
-            _select.tables.Add(_table);
             _select.leftJoinList.Append($" Left Join {_table} ON {field1}={field2}");
             return this;
         }
@@ -502,7 +501,7 @@ namespace CoffeDX
                         var number = DConvert.ToLong(value, 0);
                         if (number <= 0) value = null;
                     }
-                    paramsList.Add($"@{item.Name}", item.GetValue(model));
+                    paramsList.Add($"@{item.Name}", value);
                     if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;
                     fields.Add($"{item.Name}=@{item.Name}");
                 }
@@ -578,18 +577,25 @@ namespace CoffeDX
             public DeleteQuery(object model)
             {
                 this.model = model;
-                if (model == null) return;
-
-                if (model.GetType() == typeof(string)) this.table = "t_"+model.ToString();
+                if (model is Type)
+                {
+                    this.table = "t_" + ((Type)model).Name;
+                }
                 else
                 {
-                    this.table = "t_" + model.GetType().Name;
-                    foreach (PropertyInfo prop in model.GetType().GetProperties())
+                    if (model.GetType() == typeof(string)) this.table = model.ToString(); else this.table = "t_" + model.GetType().Name;
+                    if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
                     {
-                        if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute)))
-                        {
-                            pk = prop.Name + "=" + DConvert.ToSqlValue(prop.GetValue(model));
-                        }
+                        var attr = model.GetType().GetCustomAttribute<DEntityAttribute>();
+                        if (attr.Name != null && attr.Name.Length > 0) this.table = "t_" + attr.Name;
+                        else this.table = "t_" + model.GetType().Name;
+                    }
+                }
+                foreach (PropertyInfo prop in model.GetType().GetProperties())
+                {
+                    if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute)))
+                    {
+                        pk = prop.Name + "=" + DConvert.ToSqlValue(prop.GetValue(model));
                     }
                 }
             }
