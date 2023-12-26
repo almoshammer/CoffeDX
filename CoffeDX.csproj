@@ -79,6 +79,7 @@
     <Compile Include="Shared\Exec.cs" />
     <Compile Include="Shared\HotManager.cs" />
     <Compile Include="Shared\IQuery.cs" />
+    <Compile Include="Shared\NumberToWord.cs" />
     <Compile Include="Shared\_Constants.cs" />
     <Compile Include="Test\BaseModel.cs" />
     <Compile Include="Test\ParentModel.cs" />

@@ -125,7 +125,8 @@ namespace CoffeDX.Shared
                     || isNullableDecimal(prop.PropertyType)
                     || isNullableDouble(prop.PropertyType)
                     || isNullableDateTime(prop.PropertyType)
-                    || isNullableSqlDateTime(prop.PropertyType))
+                    || isNullableSqlDateTime(prop.PropertyType)
+                    || (prop.PropertyType == typeof(bool)))
                 {
                     prop.SetValue(entity, null); return;
                 }
