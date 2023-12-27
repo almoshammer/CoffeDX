@@ -242,7 +242,7 @@ namespace CoffeDX
         public int Delete(object model = null)
         {
             DeleteQuery _delete = new DeleteQuery(model ?? this.tableName);
-            if (this.tableName != null && this.tableName.Length > 2) _insert.table = this.tableName;
+            if (this.tableName != null && this.tableName.Length > 2) _delete.table = this.tableName;
 
             var _query = _delete.GetQuery(_select.whereList.ToString());
 
@@ -521,7 +521,7 @@ namespace CoffeDX
         }
         private class InsertQuery
         {
-            private string table { get; set; }
+            public string table { get; set; }
             private List<string> keys = new List<string>();
             private List<string> values = new List<string>();
 
