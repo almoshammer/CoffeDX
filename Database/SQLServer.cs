@@ -137,6 +137,7 @@ namespace CoffeDX.Database
 
                     /*1*/
                     var cmd = new SqlCommand(dropRelations.ToString(), (SqlConnection)conn);
+                    if(dropRelations.Length > 10)
                     cmd.ExecuteNonQuery();
                     /*2*/
                     cmd.CommandText = strTables;
