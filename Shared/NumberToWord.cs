@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CoffeDX.Shared
 {
-    internal class NumberToWord
+    public class NumberToWord
     {
 
         /// Group Levels: 987,654,321.234

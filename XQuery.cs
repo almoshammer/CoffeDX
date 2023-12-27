@@ -99,6 +99,8 @@ namespace CoffeDX
         public int Update(object model = null)
         {
             UpdateQuery _update = new UpdateQuery(model);
+
+            if(this.tableName!=null && this.tableName.Length > 2) _update.table = this.tableName;
             //_update.table = this.tableName;
             var _query = _update.GetQuery(_select.whereList.ToString());
             return SQLServer.getConnection(conn =>
@@ -123,7 +125,7 @@ namespace CoffeDX
         public int Insert(object model)
         {
             InsertQuery _insert = new InsertQuery(model);
-
+            if (this.tableName != null && this.tableName.Length > 2) _insert.table = this.tableName;
             var affectedRows = -1;
             var _query = _insert.GetQuery();
             return SQLServer.getConnection(conn =>
@@ -240,6 +242,8 @@ namespace CoffeDX
         public int Delete(object model = null)
         {
             DeleteQuery _delete = new DeleteQuery(model ?? this.tableName);
+            if (this.tableName != null && this.tableName.Length > 2) _insert.table = this.tableName;
+
             var _query = _delete.GetQuery(_select.whereList.ToString());
 
             SQLServer.getConnection<int>(conn =>
