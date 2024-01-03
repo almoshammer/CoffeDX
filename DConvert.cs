@@ -20,7 +20,7 @@ namespace CoffeDX
             if (input.GetType() == typeof(bool)) return DConvert.ToInt(input) + "";
             if (input is string) return $"'{input}'";
             #region DateTime ---condations
-          
+
             if (input is DateTime)
             {
                 if (input.ToString().Contains("01/01/1990")) return "null";
@@ -48,23 +48,23 @@ namespace CoffeDX
                 if (DConvert.ToInt(input.ToString()) == 0) return "null";
             }
 
-            if(input is byte[])
+            if (input is byte[])
             {
-                return "0x"+BitConverter.ToString(((byte[])input),0).Replace("-",string.Empty);
+                return "0x" + BitConverter.ToString(((byte[])input), 0).Replace("-", string.Empty);
             }
             return input.ToString();
         }
         public static void SetColumnsNull(DataTable dataList)
         {
             if (dataList != null || dataList.Columns.Count == 0) return;
-            for(int i = 0; i < dataList.Columns.Count; i++)
+            for (int i = 0; i < dataList.Columns.Count; i++)
             {
                 dataList.Columns[i].AllowDBNull = true;
             }
         }
         public static int ToInt(object value, int defaultValue = 0)
         {
-            if (value !=null && value.GetType() == typeof(bool)) return Convert.ToInt16(value);
+            if (value != null && value.GetType() == typeof(bool)) return Convert.ToInt16(value);
             if (!DValidate.IsNumber(value))
             {
                 return defaultValue;
@@ -73,7 +73,7 @@ namespace CoffeDX
         }
         public static long ToLong(object value, long defaultValue = 0)
         {
-            if (value !=null && value.GetType() == typeof(bool)) return Convert.ToInt16(value);;
+            if (value != null && value.GetType() == typeof(bool)) return Convert.ToInt16(value); ;
             if (!DValidate.IsNumber(value))
             {
                 return defaultValue;
@@ -82,7 +82,7 @@ namespace CoffeDX
         }
         private static string ToNumber(object value)
         {
-            if (value !=null && value.GetType() == typeof(bool)) return Convert.ToInt16(value)+"";
+            if (value != null && value.GetType() == typeof(bool)) return Convert.ToInt16(value) + "";
             if (!DValidate.IsNumber(value)) return "0";
 
             value = value.ToString().Trim();
@@ -93,7 +93,7 @@ namespace CoffeDX
         }
         public static double ToDouble(object value, double defaultValue = 0)
         {
-            if (value !=null && value.GetType() == typeof(bool)) return Convert.ToInt16(value);;
+            if (value != null && value.GetType() == typeof(bool)) return Convert.ToInt16(value); ;
             if (!DValidate.IsNumber(value))
             {
                 return defaultValue;
@@ -111,7 +111,7 @@ namespace CoffeDX
         }
         public static decimal ToDecimal(object value, decimal defaultValue = 0)
         {
-            if (value !=null && value.GetType() == typeof(bool)) return Convert.ToInt16(value);;
+            if (value != null && value.GetType() == typeof(bool)) return Convert.ToInt16(value); ;
             if (!DValidate.IsNumber(value))
             {
                 return defaultValue;
@@ -167,6 +167,14 @@ namespace CoffeDX
             }
 
             return list;
+        }
+        public static DataTable ToTable(object obj)
+        {
+            DataTable table = new DataTable();
+            if (obj == null || obj is string) return table;
+            foreach(var prop in obj.GetType().GetProperties())
+                table.Columns.Add(prop.Name, prop.GetType());
+            return table;
         }
         public static List<R> ToList<R>(DataTable table)
         {
