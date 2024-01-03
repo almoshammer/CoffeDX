@@ -179,6 +179,9 @@ namespace CoffeDX.Database
             if (tp == typeof(int)) return "Int";
             if (tp == typeof(DateTime)) return "Date";
             if (tp == typeof(DateTimeOffset)) return "DateTimeOffset";
+            if (tp == typeof(double)) return "Float";
+            if (tp == typeof(float)) return "Float";
+            if (tp == typeof(decimal)) return "Float";
 
             if (tp == typeof(long?)) return "BIGINT NULL";
             if (tp == typeof(byte?[])) return "Image NULL";
@@ -187,6 +190,9 @@ namespace CoffeDX.Database
             if (tp == typeof(int?)) return "Int NULL";
             if (tp == typeof(DateTime?)) return "Date NULL";
             if (tp == typeof(DateTimeOffset?)) return "DateTimeOffset NULL";
+            if (tp == typeof(double?)) return "Float NULL";
+            if (tp == typeof(float?)) return "Float NULL";
+            if (tp == typeof(decimal?)) return "Float NULL";
 
             return "Varchar(20)";
         }
