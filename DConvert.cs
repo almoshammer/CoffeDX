@@ -172,7 +172,7 @@ namespace CoffeDX
         {
             DataTable table = new DataTable();
             if (obj == null || obj is string) return table;
-            foreach(var prop in obj.GetType().GetProperties())
+            foreach(var prop in ((Type)obj).GetProperties())
                 table.Columns.Add(prop.Name, prop.GetType());
             return table;
         }
