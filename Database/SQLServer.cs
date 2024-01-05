@@ -17,9 +17,18 @@ namespace CoffeDX.Database
     public class SQLServer
     {
         public static string DBName { get; set; }
-        public static string ServerName { get; set; }
-        public static string Username { get; set; }
-        public static string Password { get; set; }
+        public static string ServerName {
+            get=> KeyValDB.GetString("SERVER_NAME");
+            set => KeyValDB.SetString("SERVER_NAME",value);
+        }
+        public static string Username {
+            get => KeyValDB.GetString("SERVER_USER_NAME");
+            set => KeyValDB.SetString("SERVER_USER_NAME", value);
+        }
+        public static string Password {
+            get => KeyValDB.GetString("SERVER_PASSWORD");
+            set => KeyValDB.SetString("SERVER_PASSWORD", value);
+        }
         public static AUTHTYPE AUTH_TYPE { get; set; } = AUTHTYPE.LOCAL;
 
         public static bool flag_check_connection = true;
@@ -61,14 +70,17 @@ namespace CoffeDX.Database
                 {
                     // ExHanlder.handle(null, ExHanlder.ERR.INS, ExHanlder.PROMP_TYPE.HID, _00CONSTANT.CONN_OPENED);
                 }
-                if (conn?.State == System.Data.ConnectionState.Closed)
-                    conn?.Open();
+                if (conn?.State == System.Data.ConnectionState.Closed) conn?.Open();
                 var result = @object(conn);
                 conn.Close();
                 return result;
             }
             catch (System.Exception ex)
             {
+                if(conn == null || conn.State == ConnectionState.Closed)
+                {
+                    new FrmSetupSqlServer().ShowDialog();
+                }
                 MessageBox.Show(ex.Message);
                 // ExHanlder.handle(ex, ExHanlder.ERR.APP, ExHanlder.PROMP_TYPE.MSG, _00CONSTANT.DB_CONN_ERROR1);
                 // Application.Exit();

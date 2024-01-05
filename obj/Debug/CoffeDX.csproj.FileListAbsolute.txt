@@ -22,3 +22,6 @@ E:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\DBreezeBased.xml
 E:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.csproj.CopyComplete
 E:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\CoffeDX.dll
 E:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.dll
+E:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.Database.FrmSetupSqlServer.resources
+E:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.Properties.Resources.resources
+E:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.csproj.GenerateResource.cache
