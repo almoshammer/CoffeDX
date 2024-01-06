@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CoffeDX.Query.Mapping;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -38,12 +39,14 @@ namespace CoffeDX.Database
                 return;
             }
             SQLServer.ServerName = cmbServers.Text;
+            this.Cursor = Cursors.WaitCursor;
             Close();
-            SQLServer.getConnection<string>(res =>
+            SQLServer.getConnection <DKeyValue>(res =>
             {
 
-                return "test connection";
+                return new DKeyValue("","");
             });
         }
+
     }
 }

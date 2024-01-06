@@ -65,6 +65,7 @@
             this.cmbServers.FormattingEnabled = true;
             this.cmbServers.Location = new System.Drawing.Point(127, 119);
             this.cmbServers.Name = "cmbServers";
+            this.cmbServers.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.cmbServers.Size = new System.Drawing.Size(267, 21);
             this.cmbServers.TabIndex = 2;
             // 

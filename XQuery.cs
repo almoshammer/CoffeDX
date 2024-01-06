@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Data.SqlTypes;
 using System.Reflection;
 using System.Text;
 
@@ -76,6 +77,7 @@ namespace CoffeDX
             _select.select(fields);
             return this;
         }
+
         public DataTable Get()
         {
             if (_select == null) _select = new SelectQuery(tableName);
@@ -86,12 +88,13 @@ namespace CoffeDX
                 DataTable table = new DataTable();
                 try
                 {
+                    if (conn == null) return table;
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
                     table.Load(cmd.ExecuteReader());
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception(ex.Message);
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
                 }
                 return table;
             });
@@ -150,7 +153,7 @@ namespace CoffeDX
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception(ex.Message);
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
                     return -1;
                 }
             });
@@ -261,6 +264,19 @@ namespace CoffeDX
             });
             return 0;
         }
+
+        public ISelect Between(string field, object value1, object value2)
+        {
+            
+            if(value1 is string || value1 is DateTime || value1 is DateTime? || value1 is SqlDateTime || value1 is SqlDateTime?)
+            {
+                value1 = $"'{value1}'";
+                value2= $"'{value2}'";
+            }
+            _select.whereList.Append($"{field} BETWEEN {value1} AND {value2}");
+            return this;
+        }
+
         public ISelect Join(object table, string field1, string field2)
         {
             string _table = "";

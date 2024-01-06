@@ -16,16 +16,28 @@ namespace CoffeDX.Database
     public enum AUTHTYPE { LOCAL, AUTH }
     public class SQLServer
     {
-        public static string DBName { get; set; }
-        public static string ServerName {
-            get=> KeyValDB.GetString("SERVER_NAME");
-            set => KeyValDB.SetString("SERVER_NAME",value);
+        public static string DBNamePostfix
+        {
+            get => KeyValDB.GetString("DABEBASE_POSTFIX");
+            set => KeyValDB.SetString("DABEBASE_POSTFIX", value);
         }
-        public static string Username {
+        public static string DBName
+        {
+            get => KeyValDB.GetString("DATABASE_NAME" + DBNamePostfix);
+            set => KeyValDB.SetString("DATABASE_NAME" + DBNamePostfix, value);
+        }
+        public static string ServerName
+        {
+            get => KeyValDB.GetString("S_SERVER_NAME");
+            set => KeyValDB.SetString("S_SERVER_NAME", value);
+        }
+        public static string Username
+        {
             get => KeyValDB.GetString("SERVER_USER_NAME");
             set => KeyValDB.SetString("SERVER_USER_NAME", value);
         }
-        public static string Password {
+        public static string Password
+        {
             get => KeyValDB.GetString("SERVER_PASSWORD");
             set => KeyValDB.SetString("SERVER_PASSWORD", value);
         }
@@ -77,18 +89,17 @@ namespace CoffeDX.Database
             }
             catch (System.Exception ex)
             {
-                if(conn == null || conn.State == ConnectionState.Closed)
+                if (conn == null || conn.State == ConnectionState.Closed)
                 {
                     new FrmSetupSqlServer().ShowDialog();
                 }
-                MessageBox.Show(ex.Message);
                 // ExHanlder.handle(ex, ExHanlder.ERR.APP, ExHanlder.PROMP_TYPE.MSG, _00CONSTANT.DB_CONN_ERROR1);
                 // Application.Exit();
-                return Activator.CreateInstance<T>();
+                return @object(null);
             }
         }
 
-        public static void Migrate(Assembly assembly,bool allowDrop=false)
+        public static void Migrate(Assembly assembly, bool allowDrop = false)
         {
             StringBuilder tables = new StringBuilder();
             StringBuilder fKeys = new StringBuilder();
@@ -102,8 +113,8 @@ namespace CoffeDX.Database
                 if (tp.IsClass && tp.IsPublic && Attribute.IsDefined(tp, typeof(DEntityAttribute)))
                 {
                     string table = $"t_{tp.Name}";
-                    if(allowDrop)
-                    tables.Append($"If Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}') Drop Table dbo.{table};\n");
+                    if (allowDrop)
+                        tables.Append($"If Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}') Drop Table dbo.{table};\n");
 
 
                     tables.Append($"If Not Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}')\n");
@@ -114,19 +125,20 @@ namespace CoffeDX.Database
                         string typeName = $"{prop.Name} {GetSQLServerFieldType(prop)}";
                         if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute))) typeName += " Primary Key";
                         if (Attribute.IsDefined(prop, typeof(DIncrementalAttribute))) typeName += " Identity(1,1) ";
-                        
+
                         else if (Attribute.IsDefined(prop, typeof(DForeignKeyAttribute)))
                         {
                             var fAttr = prop.GetCustomAttribute<DForeignKeyAttribute>();
                             var parentKey = fAttr.ParentKey;
 
-                            var on_constr_event = fAttr.constraint_event == ON_CONSTRAINT_EVENT.CASECASE ? "ON DELETE CASECASE":"";
+                            var on_constr_event = fAttr.constraint_event == ON_CONSTRAINT_EVENT.CASECASE ? "ON DELETE CASECASE" : "";
 
-                            if (parentKey == null || parentKey.Length == 0) 
+                            if (parentKey == null || parentKey.Length == 0)
                                 parentKey = GetPrimaryKey(fAttr.ParentModel);
                             // TODO create forieghn key with casecade on delete only, and non constrained field if value not found
                             var ctr_name = $"fk_{table}_TO_t_{fAttr.ParentModel.Name}";
-                            if (allowDrop) {
+                            if (allowDrop)
+                            {
                                 dropRelations.Append($"If Exists(Select * From Information_Schema.REFERENTIAL_CONSTRAINTS Where CONSTRAINT_NAME = '{ctr_name}')\n");
                                 dropRelations.Append($"Alter table {table} Drop Constraint {ctr_name};\n");
                             }
@@ -149,8 +161,8 @@ namespace CoffeDX.Database
 
                     /*1*/
                     var cmd = new SqlCommand(dropRelations.ToString(), (SqlConnection)conn);
-                    if(dropRelations.Length > 10)
-                    cmd.ExecuteNonQuery();
+                    if (dropRelations.Length > 10)
+                        cmd.ExecuteNonQuery();
                     /*2*/
                     cmd.CommandText = strTables;
                     cmd.ExecuteNonQuery();
