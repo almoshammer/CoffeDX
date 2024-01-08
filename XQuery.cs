@@ -15,6 +15,7 @@ namespace CoffeDX
     public class XQuery : ISelect
     {
         private SelectQuery _select;
+        private UpdateQuery _update;
         private string tableName { get; set; } = null;
         public XQuery()
         {
@@ -52,16 +53,17 @@ namespace CoffeDX
             return SQLServer.getConnection(conn =>
             {
                 DataTable result = new DataTable();
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    result.Load(cmd.ExecuteReader());
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception(ex.Message);
-                }
+                var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                result.Load(cmd.ExecuteReader());
                 return result;
+            });
+        }
+        public static int ExecNon(string _query)
+        {
+            return SQLServer.getConnection(conn =>
+            {
+                var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                return cmd.ExecuteNonQuery();
             });
         }
         public ISelect Select(params string[] fields)
@@ -69,6 +71,12 @@ namespace CoffeDX
             if (_select == null)
                 _select = new SelectQuery(tableName);
             _select.select(fields);
+            return this;
+        }
+        public ISelect Set(params string[] fields)
+        {
+            if (_update == null) _update = new UpdateQuery(tableName);
+            _update.Set(fields);
             return this;
         }
         public ISelect Exclude(params string[] fields)
@@ -101,28 +109,19 @@ namespace CoffeDX
         }
         public int Update(object model = null)
         {
-            UpdateQuery _update = new UpdateQuery(model);
+            if (_update == null) _update = new UpdateQuery(model);
+            else _update.SetModel(model);
 
-            if(this.tableName!=null && this.tableName.Length > 2) _update.table = this.tableName;
+            if (this.tableName != null && this.tableName.Length > 2) _update.table = this.tableName;
             //_update.table = this.tableName;
             var _query = _update.GetQuery(_select.whereList.ToString());
             return SQLServer.getConnection(conn =>
             {
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-
-                    var lst = _update.GetParams();
-                    for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
-
-                    var affectedRows = cmd.ExecuteNonQuery();
-                    return affectedRows;
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception(ex.Message);
-                    return -1;
-                }
+                var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                var lst = _update.GetParams();
+                for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
+                var affectedRows = cmd.ExecuteNonQuery();
+                return affectedRows;
             });
         }
         public int Insert(object model)
@@ -133,63 +132,46 @@ namespace CoffeDX
             var _query = _insert.GetQuery();
             return SQLServer.getConnection(conn =>
             {
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    var lst = _insert.GetParams();
-                    for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
+                var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                var lst = _insert.GetParams();
+                for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
 
-                    if (_query.Contains("Inserted"))
-                    {
-                        object result = cmd.ExecuteScalar();
-                        affectedRows = DConvert.ToInt(result);
-                    }
-                    else
-                    {
-                        affectedRows = cmd.ExecuteNonQuery();
-                    }
-                    return affectedRows;
-
-                }
-                catch (Exception ex)
+                if (_query.Contains("Inserted"))
                 {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
-                    return -1;
+                    object result = cmd.ExecuteScalar();
+                    affectedRows = DConvert.ToInt(result);
                 }
+                else
+                {
+                    affectedRows = cmd.ExecuteNonQuery();
+                }
+                return affectedRows;
             });
         }
 
 
         public int InsertTable(DataTable table)
         {
-            try
+            string message = "";
+            if (table == null || table.Rows.Count == 0)
             {
-                string message = "";
-                if (table == null || table.Rows.Count == 0)
-                {
-                    message = "لايوجد سجلات لاضافتها";
-                    return 0;
-                }
-
-                if (table.TableName == null || table.TableName.Length == 0)
-                {
-                    message = "يجب تحديد اسم جدول";
-                    throw new Exception(message);
-                    return 0;
-                }
-                return SQLServer.getConnection(@conn =>
-                {
-                    SqlBulkCopy sqlBulkCopy = new SqlBulkCopy((SqlConnection)@conn);
-                    sqlBulkCopy.DestinationTableName = table.TableName;
-                    sqlBulkCopy.WriteToServer(table);
-                    return 1;
-                });
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
+                message = "لايوجد سجلات لاضافتها";
                 return 0;
             }
+
+            if (table.TableName == null || table.TableName.Length == 0)
+            {
+                message = "يجب تحديد اسم جدول";
+                throw new Exception(message);
+                return 0;
+            }
+            return SQLServer.getConnection(@conn =>
+            {
+                SqlBulkCopy sqlBulkCopy = new SqlBulkCopy((SqlConnection)@conn);
+                sqlBulkCopy.DestinationTableName = table.TableName;
+                sqlBulkCopy.WriteToServer(table);
+                return 1;
+            });
         }
 
         public int InsertList<T>(List<T> list, string tableName)
@@ -267,11 +249,11 @@ namespace CoffeDX
 
         public ISelect Between(string field, object value1, object value2)
         {
-            
-            if(value1 is string || value1 is DateTime || value1 is DateTime? || value1 is SqlDateTime || value1 is SqlDateTime?)
+
+            if (value1 is string || value1 is DateTime || value1 is DateTime? || value1 is SqlDateTime || value1 is SqlDateTime?)
             {
                 value1 = $"'{value1}'";
-                value2= $"'{value2}'";
+                value2 = $"'{value2}'";
             }
             _select.whereList.Append($"{field} BETWEEN {value1} AND {value2}");
             return this;
@@ -486,10 +468,15 @@ namespace CoffeDX
             public object model { get; set; }
             private string pK;
             SortedList paramsList = new SortedList();
-
-            public UpdateQuery(object model)
+            public UpdateQuery Set(params string[] args)
+            {
+                this.fields.AddRange(args);
+                return this;
+            }
+            public void SetModel(object model)
             {
                 this.model = model;
+                if (model == null) return;
                 if (model is string) this.table = model.ToString();
                 else if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
                 {
@@ -516,6 +503,10 @@ namespace CoffeDX
                     if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;
                     fields.Add($"{item.Name}=@{item.Name}");
                 }
+            }
+            public UpdateQuery(object model)
+            {
+                SetModel(model);
             }
             public SortedList GetParams() => this.paramsList;
             public string GetQuery(string whereList)
@@ -677,6 +668,7 @@ namespace CoffeDX
         int Update(object model = null);
         int Delete(object model = null);
         object Max(string fieldName, object @default);
+        long Count();
 
     }
     public interface SubWhere
