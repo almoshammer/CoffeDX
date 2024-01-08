@@ -89,13 +89,11 @@ namespace CoffeDX.Database
             }
             catch (System.Exception ex)
             {
-                if (conn == null || conn.State == ConnectionState.Closed)
-                {
-                    new FrmSetupSqlServer().ShowDialog();
-                }
+
+                MessageBox.Show(ex.Message);
                 // ExHanlder.handle(ex, ExHanlder.ERR.APP, ExHanlder.PROMP_TYPE.MSG, _00CONSTANT.DB_CONN_ERROR1);
                 // Application.Exit();
-                return @object(null);
+                return @object(conn);
             }
         }
 

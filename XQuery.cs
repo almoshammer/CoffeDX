@@ -383,17 +383,8 @@ namespace CoffeDX
             return SQLServer.getConnection(conn =>
             {
                 DataTable table = new DataTable();
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    return cmd.ExecuteScalar();
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception(ex.Message);
-                    return @default;
-                }
-
+                var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                return cmd.ExecuteScalar();
             });
         }
         public DataRow First()
@@ -404,39 +395,35 @@ namespace CoffeDX
             return SQLServer.getConnection(conn =>
             {
                 DataTable table = new DataTable();
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    table.Load(cmd.ExecuteReader());
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception(ex.Message);
-                }
+                var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                table.Load(cmd.ExecuteReader());
                 if (table.Rows.Count == 0) table.Rows.Add();
                 return table.Rows[0];
+            });
+        }
+        public long Count()
+        {
+            string _query = _select.GetQueryCount();
+            return SQLServer.getConnection(conn =>
+            {
+                long count = 0;
+                DataTable table = new DataTable();
+                var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                count = DConvert.ToLong(cmd.ExecuteScalar());
+                return 0;
             });
         }
 
         public T First<T>()
         {
             if (_select == null) _select = new SelectQuery(tableName);
-
             T instance = Activator.CreateInstance<T>();
-
             string _query = _select.GetQueryFirst();
             return SQLServer.getConnection(conn =>
             {
                 DataTable table = new DataTable();
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    table.Load(cmd.ExecuteReader());
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception(ex.Message);
-                }
+                var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                table.Load(cmd.ExecuteReader());
                 if (table.Rows.Count == 0) table.Rows.Add();
                 DConvert.ToEntity<T>(table.Rows[0]);
                 return instance;
@@ -486,6 +473,10 @@ namespace CoffeDX
             {
                 if (this.fields.Count == 0) this.fields.Add("*");
                 return $"SELECT TOP 1 {string.Join(",", this.fields)} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
+            }
+            public string GetQueryCount()
+            {
+                return $"SELECT count(*) AS rows_count FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
             }
         }
         private class UpdateQuery
