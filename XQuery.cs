@@ -478,7 +478,7 @@ namespace CoffeDX
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
                     table.Load(cmd.ExecuteReader());
                     if (table.Rows.Count == 0) table.Rows.Add();
-                    DConvert.ToEntity<T>(table.Rows[0]);
+                    return DConvert.ToEntity<T>(table.Rows[0]);
                 }
                 catch (Exception ex)
                 {
