@@ -33,7 +33,7 @@ namespace CoffeDX
                 if (Attribute.IsDefined(_type, typeof(DEntityAttribute)))
                 {
                     var prop = _type.GetCustomAttribute<DEntityAttribute>();
-                    if (string.IsNullOrWhiteSpace(prop.Name)) this.tableName = "t_" + prop.Name;
+                    if (!string.IsNullOrWhiteSpace(prop.Name)) this.tableName = "t_" + prop.Name;
                 }
             }
             else
@@ -42,7 +42,7 @@ namespace CoffeDX
                 if (Attribute.IsDefined(table.GetType(), typeof(DEntityAttribute)))
                 {
                     var prop = table.GetType().GetCustomAttribute<DEntityAttribute>();
-                    if (string.IsNullOrWhiteSpace(prop.Name)) this.tableName = "t_" + prop.Name;
+                    if (!string.IsNullOrWhiteSpace(prop.Name)) this.tableName = "t_" + prop.Name;
                 }
             }
             if (_select == null)
@@ -130,7 +130,7 @@ namespace CoffeDX
             if (_update == null) _update = new UpdateQuery(model);
             else if(model!=null) _update.SetModel(model);
 
-            if (string.IsNullOrWhiteSpace(this.tableName)) _update.table = this.tableName;
+            if (!string.IsNullOrWhiteSpace(this.tableName)) _update.table = this.tableName;
             //_update.table = this.tableName;
             var _query = _update.GetQuery(_select.whereList.ToString());
             return SQLServer.getConnection(conn =>
@@ -316,7 +316,7 @@ namespace CoffeDX
                 if (Attribute.IsDefined(_type, typeof(DEntityAttribute)))
                 {
                     var prop = _type.GetCustomAttribute<DEntityAttribute>();
-                    if (string.IsNullOrWhiteSpace(prop.Name)) _table = "t_" + prop.Name;
+                    if (!string.IsNullOrWhiteSpace(prop.Name)) _table = "t_" + prop.Name;
                 }
             }
             else
@@ -325,7 +325,7 @@ namespace CoffeDX
                 if (Attribute.IsDefined(table.GetType(), typeof(DEntityAttribute)))
                 {
                     var prop = table.GetType().GetCustomAttribute<DEntityAttribute>();
-                    if (string.IsNullOrWhiteSpace(prop.Name)) _table = "t_" + prop.Name;
+                    if (!string.IsNullOrWhiteSpace(prop.Name)) _table = "t_" + prop.Name;
                 }
             }
 
@@ -556,31 +556,36 @@ namespace CoffeDX
                 this.model = model;
                 if (model == null) return;
                 if (model is string) this.table = model.ToString();
-                else if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
+                else 
                 {
-                    var attr = model.GetType().GetCustomAttribute<DEntityAttribute>();
-                    if (!string.IsNullOrWhiteSpace(attr.Name)) this.table = "t_" + attr.Name;
-                    else this.table = "t_" + this.model.GetType().Name;
-                }
-                foreach (var item in model.GetType().GetProperties())
-                {
-                    if (Attribute.IsDefined(item, typeof(DPreventUpdateAttribute))) continue;
+                    if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
+                    {
+                        var attr = model.GetType().GetCustomAttribute<DEntityAttribute>();
+                        if (!string.IsNullOrWhiteSpace(attr.Name)) this.table = "t_" + attr.Name;
+                        else this.table = "t_" + this.model.GetType().Name;
+                    }
+                    foreach (var item in model.GetType().GetProperties())
+                    {
+                        if (Attribute.IsDefined(item, typeof(DPreventUpdateAttribute))) continue;
 
 
-                    object value = item.GetValue(model);
-                    if (Attribute.IsDefined(item, typeof(DPrimaryKeyAttribute)))
-                    {
-                        pK = $"WHERE {item.Name}=@{item.Name}";
+                        object value = item.GetValue(model);
+                        if (Attribute.IsDefined(item, typeof(DPrimaryKeyAttribute)))
+                        {
+                            pK = $"WHERE {item.Name}=@{item.Name}";
+                        }
+                        if (Attribute.IsDefined(item, typeof(DForeignKeyAttribute)))
+                        {
+                            var number = DConvert.ToLong(value, 0);
+                            if (number <= 0) value = null;
+                        }
+                        paramsList.Add($"@{item.Name}", value);
+                        if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;
+                        fields.Add($"{item.Name}=@{item.Name}");
                     }
-                    if (Attribute.IsDefined(item, typeof(DForeignKeyAttribute)))
-                    {
-                        var number = DConvert.ToLong(value, 0);
-                        if (number <= 0) value = null;
-                    }
-                    paramsList.Add($"@{item.Name}", value);
-                    if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;
-                    fields.Add($"{item.Name}=@{item.Name}");
                 }
+
+              
             }
             public UpdateQuery(object model)
             {
@@ -682,7 +687,7 @@ namespace CoffeDX
             public string GetQuery(string whereList)
             {
                 string whPrivate = whereList + "";
-                if (string.IsNullOrWhiteSpace(pk))
+                if (!string.IsNullOrWhiteSpace(pk))
                 {
                     whPrivate = $"WHERE {pk}";
                 }
