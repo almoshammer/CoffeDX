@@ -1,5 +1,6 @@
 ﻿using CoffeDX.Database;
 using CoffeDX.Query.Mapping;
+using CoffeDX.Shared;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -32,7 +33,7 @@ namespace CoffeDX
                 if (Attribute.IsDefined(_type, typeof(DEntityAttribute)))
                 {
                     var prop = _type.GetCustomAttribute<DEntityAttribute>();
-                    if (prop.Name != null && prop.Name.Length > 0) this.tableName = "t_" + prop.Name;
+                    if (string.IsNullOrWhiteSpace(prop.Name)) this.tableName = "t_" + prop.Name;
                 }
             }
             else
@@ -41,7 +42,7 @@ namespace CoffeDX
                 if (Attribute.IsDefined(table.GetType(), typeof(DEntityAttribute)))
                 {
                     var prop = table.GetType().GetCustomAttribute<DEntityAttribute>();
-                    if (prop.Name != null && prop.Name.Length > 0) this.tableName = "t_" + prop.Name;
+                    if (string.IsNullOrWhiteSpace(prop.Name)) this.tableName = "t_" + prop.Name;
                 }
             }
             if (_select == null)
@@ -53,8 +54,15 @@ namespace CoffeDX
             return SQLServer.getConnection(conn =>
             {
                 DataTable result = new DataTable();
-                var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                result.Load(cmd.ExecuteReader());
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    result.Load(cmd.ExecuteReader());
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                }
                 return result;
             });
         }
@@ -62,8 +70,18 @@ namespace CoffeDX
         {
             return SQLServer.getConnection(conn =>
             {
-                var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                return cmd.ExecuteNonQuery();
+
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    return cmd.ExecuteNonQuery();
+
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                }
+                return 0;
             });
         }
         public ISelect Select(params string[] fields)
@@ -110,41 +128,59 @@ namespace CoffeDX
         public int Update(object model = null)
         {
             if (_update == null) _update = new UpdateQuery(model);
-            else _update.SetModel(model);
+            else if(model!=null) _update.SetModel(model);
 
-            if (this.tableName != null && this.tableName.Length > 2) _update.table = this.tableName;
+            if (string.IsNullOrWhiteSpace(this.tableName)) _update.table = this.tableName;
             //_update.table = this.tableName;
             var _query = _update.GetQuery(_select.whereList.ToString());
             return SQLServer.getConnection(conn =>
             {
-                var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                var lst = _update.GetParams();
-                for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
-                var affectedRows = cmd.ExecuteNonQuery();
+                var affectedRows = 0;
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    var lst = _update.GetParams();
+                    for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
+                    affectedRows = cmd.ExecuteNonQuery();
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                }
+
                 return affectedRows;
             });
         }
         public int Insert(object model)
         {
             InsertQuery _insert = new InsertQuery(model);
-            if (this.tableName != null && this.tableName.Length > 2) _insert.table = this.tableName;
+            if (!string.IsNullOrWhiteSpace(this.tableName)) _insert.table = this.tableName;
             var affectedRows = -1;
             var _query = _insert.GetQuery();
             return SQLServer.getConnection(conn =>
             {
-                var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                var lst = _insert.GetParams();
-                for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
 
-                if (_query.Contains("Inserted"))
+                try
                 {
-                    object result = cmd.ExecuteScalar();
-                    affectedRows = DConvert.ToInt(result);
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    var lst = _insert.GetParams();
+                    for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
+
+                    if (_query.Contains("Inserted"))
+                    {
+                        object result = cmd.ExecuteScalar();
+                        affectedRows = DConvert.ToInt(result);
+                    }
+                    else
+                    {
+                        affectedRows = cmd.ExecuteNonQuery();
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    affectedRows = cmd.ExecuteNonQuery();
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
                 }
+
                 return affectedRows;
             });
         }
@@ -159,7 +195,7 @@ namespace CoffeDX
                 return 0;
             }
 
-            if (table.TableName == null || table.TableName.Length == 0)
+            if (string.IsNullOrWhiteSpace(table.TableName))
             {
                 message = "يجب تحديد اسم جدول";
                 throw new Exception(message);
@@ -167,9 +203,17 @@ namespace CoffeDX
             }
             return SQLServer.getConnection(@conn =>
             {
-                SqlBulkCopy sqlBulkCopy = new SqlBulkCopy((SqlConnection)@conn);
-                sqlBulkCopy.DestinationTableName = table.TableName;
-                sqlBulkCopy.WriteToServer(table);
+                try
+                {
+                    SqlBulkCopy sqlBulkCopy = new SqlBulkCopy((SqlConnection)@conn);
+                    sqlBulkCopy.DestinationTableName = table.TableName;
+                    sqlBulkCopy.WriteToServer(table);
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                }
+
                 return 1;
             });
         }
@@ -204,7 +248,7 @@ namespace CoffeDX
                     return 0;
                 }
 
-                if (table.TableName == null || table.TableName.Length == 0)
+                if (string.IsNullOrWhiteSpace(table.TableName))
                 {
                     message = "يجب تحديد اسم جدول";
                     throw new Exception(message);
@@ -227,7 +271,7 @@ namespace CoffeDX
         public int Delete(object model = null)
         {
             DeleteQuery _delete = new DeleteQuery(model ?? this.tableName);
-            if (this.tableName != null && this.tableName.Length > 2) _delete.table = this.tableName;
+            if (!string.IsNullOrWhiteSpace(this.tableName)) _delete.table = this.tableName;
 
             var _query = _delete.GetQuery(_select.whereList.ToString());
 
@@ -272,7 +316,7 @@ namespace CoffeDX
                 if (Attribute.IsDefined(_type, typeof(DEntityAttribute)))
                 {
                     var prop = _type.GetCustomAttribute<DEntityAttribute>();
-                    if (prop.Name != null && prop.Name.Length > 0) _table = "t_" + prop.Name;
+                    if (string.IsNullOrWhiteSpace(prop.Name)) _table = "t_" + prop.Name;
                 }
             }
             else
@@ -281,7 +325,7 @@ namespace CoffeDX
                 if (Attribute.IsDefined(table.GetType(), typeof(DEntityAttribute)))
                 {
                     var prop = table.GetType().GetCustomAttribute<DEntityAttribute>();
-                    if (prop.Name != null && prop.Name.Length > 0) _table = "t_" + prop.Name;
+                    if (string.IsNullOrWhiteSpace(prop.Name)) _table = "t_" + prop.Name;
                 }
             }
 
@@ -302,7 +346,7 @@ namespace CoffeDX
                 if (Attribute.IsDefined(_type, typeof(DEntityAttribute)))
                 {
                     var prop = _type.GetCustomAttribute<DEntityAttribute>();
-                    if (prop.Name != null && prop.Name.Length > 0) _table = "t_" + prop.Name;
+                    if (!string.IsNullOrWhiteSpace(prop.Name)) _table = "t_" + prop.Name;
                 }
             }
             else
@@ -311,7 +355,7 @@ namespace CoffeDX
                 if (Attribute.IsDefined(table.GetType(), typeof(DEntityAttribute)))
                 {
                     var prop = table.GetType().GetCustomAttribute<DEntityAttribute>();
-                    if (prop.Name != null && prop.Name.Length > 0) _table = "t_" + prop.Name;
+                    if (!string.IsNullOrWhiteSpace(prop.Name)) _table = "t_" + prop.Name;
                 }
             }
 
@@ -364,9 +408,18 @@ namespace CoffeDX
             string _query = _select.GetQuery();
             return SQLServer.getConnection(conn =>
             {
-                DataTable table = new DataTable();
-                var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                return cmd.ExecuteScalar();
+                try
+                {
+                    DataTable table = new DataTable();
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    return cmd.ExecuteScalar();
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                    return 0;
+                }
+
             });
         }
         public DataRow First()
@@ -377,9 +430,17 @@ namespace CoffeDX
             return SQLServer.getConnection(conn =>
             {
                 DataTable table = new DataTable();
-                var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                table.Load(cmd.ExecuteReader());
-                if (table.Rows.Count == 0) table.Rows.Add();
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    table.Load(cmd.ExecuteReader());
+                    if (table.Rows.Count == 0) table.Rows.Add();
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                }
+
                 return table.Rows[0];
             });
         }
@@ -389,9 +450,16 @@ namespace CoffeDX
             return SQLServer.getConnection(conn =>
             {
                 long count = 0;
-                DataTable table = new DataTable();
-                var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                count = DConvert.ToLong(cmd.ExecuteScalar());
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    count = DConvert.ToLong(cmd.ExecuteScalar());
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                }
+
                 return 0;
             });
         }
@@ -404,10 +472,20 @@ namespace CoffeDX
             return SQLServer.getConnection(conn =>
             {
                 DataTable table = new DataTable();
-                var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                table.Load(cmd.ExecuteReader());
-                if (table.Rows.Count == 0) table.Rows.Add();
-                DConvert.ToEntity<T>(table.Rows[0]);
+
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    table.Load(cmd.ExecuteReader());
+                    if (table.Rows.Count == 0) table.Rows.Add();
+                    DConvert.ToEntity<T>(table.Rows[0]);
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                }
+
+
                 return instance;
             });
         }
@@ -481,7 +559,7 @@ namespace CoffeDX
                 else if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
                 {
                     var attr = model.GetType().GetCustomAttribute<DEntityAttribute>();
-                    if (attr.Name != null && attr.Name.Length > 0) this.table = "t_" + attr.Name;
+                    if (!string.IsNullOrWhiteSpace(attr.Name)) this.table = "t_" + attr.Name;
                     else this.table = "t_" + this.model.GetType().Name;
                 }
                 foreach (var item in model.GetType().GetProperties())
@@ -513,7 +591,7 @@ namespace CoffeDX
             {
                 if (this.fields.Count == 0) return "";
                 var privateWh = whereList;
-                if (whereList == null || whereList.Length == 0) privateWh = pK;
+                if (string.IsNullOrWhiteSpace(whereList)) privateWh = pK;
                 return $"UPDATE {this.table} SET {string.Join(",", this.fields)} {privateWh}";
             }
         }
@@ -535,7 +613,7 @@ namespace CoffeDX
                 if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
                 {
                     var attr = model.GetType().GetCustomAttribute<DEntityAttribute>();
-                    if (attr.Name != null && attr.Name.Length > 0) this.table = "t_" + attr.Name;
+                    if (!string.IsNullOrWhiteSpace(attr.Name)) this.table = "t_" + attr.Name;
                     else this.table = "t_" + model.GetType().Name;
                 }
                 foreach (var item in model.GetType().GetProperties())
@@ -589,7 +667,7 @@ namespace CoffeDX
                     if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
                     {
                         var attr = model.GetType().GetCustomAttribute<DEntityAttribute>();
-                        if (attr.Name != null && attr.Name.Length > 0) this.table = "t_" + attr.Name;
+                        if (!string.IsNullOrWhiteSpace(attr.Name)) this.table = "t_" + attr.Name;
                         else this.table = "t_" + model.GetType().Name;
                     }
                 }
@@ -604,11 +682,11 @@ namespace CoffeDX
             public string GetQuery(string whereList)
             {
                 string whPrivate = whereList + "";
-                if (pk != null && pk.Length > 0)
+                if (string.IsNullOrWhiteSpace(pk))
                 {
                     whPrivate = $"WHERE {pk}";
                 }
-                else if (whereList == null && whereList.Length == 0)
+                else if (string.IsNullOrWhiteSpace(whereList))
                 {
                     foreach (var item in this.model.GetType().GetProperties())
                     {

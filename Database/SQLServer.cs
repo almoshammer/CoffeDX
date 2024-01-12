@@ -159,14 +159,16 @@ namespace CoffeDX.Database
 
                     /*1*/
                     var cmd = new SqlCommand(dropRelations.ToString(), (SqlConnection)conn);
-                    if (dropRelations.Length > 10)
-                        cmd.ExecuteNonQuery();
+                    if (dropRelations.Length > 10) cmd.ExecuteNonQuery();
                     /*2*/
                     cmd.CommandText = strTables;
                     cmd.ExecuteNonQuery();
                     /*3*/
-                    cmd.CommandText = strKeys;
-                    cmd.ExecuteNonQuery();
+                    if (strKeys != null && strKeys.Length > 10 && strKeys.Contains("Alter"))
+                    {
+                        cmd.CommandText = strKeys;
+                        cmd.ExecuteNonQuery();
+                    }
                     return true;
                 }
                 catch (Exception ex)
