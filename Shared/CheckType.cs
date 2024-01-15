@@ -142,11 +142,23 @@ namespace CoffeDX.Shared
                     {
                         SqlDateTime ndt = new SqlDateTime(DateTime.Parse(value?.ToString()));
                         prop.SetValue(entity, ndt);
+                    }else if (prop.PropertyType == typeof( long ?) ||  prop.PropertyType == typeof( int?) ||  prop.PropertyType == typeof( double?) ||  prop.PropertyType == typeof( decimal?) ||  prop.PropertyType == typeof( float?)
+                        || false)
+                    {
+                        prop.SetValue(entity, value);
                     }
                     else
                     {
-                        object new_obj = ChangeType(value, prop.PropertyType);
-                        prop.SetValue(entity, new_obj);
+                        try
+                        {
+                            object new_obj = ChangeType(value, prop.PropertyType);
+                            prop.SetValue(entity, new_obj);
+                        }
+                        catch(Exception ex)
+                        {
+                           
+                        }
+                      
                     }
                 }
                 else prop.SetValue(entity, value);
