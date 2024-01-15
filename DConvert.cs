@@ -117,6 +117,15 @@ namespace CoffeDX
                 return defaultValue;
             }
             return Convert.ToDecimal(ToNumber(value));
+        }  
+        public static float ToFloat(object value, float defaultValue = 0)
+        {
+            if (value != null && value.GetType() == typeof(bool)) return Convert.ToInt16(value); ;
+            if (!DValidate.IsNumber(value))
+            {
+                return defaultValue;
+            }
+            return Convert.ToSingle(ToNumber(value));
         }
         public static bool ToBool(object st)
         {
