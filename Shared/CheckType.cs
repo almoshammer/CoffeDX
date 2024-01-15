@@ -150,7 +150,6 @@ namespace CoffeDX.Shared
                     else if (prop.PropertyType == typeof(float?)) prop.SetValue(entity, DConvert.ToFloat(value));
                     else
                     {
-                        
                         try
                         {
                             object new_obj = ChangeType(value, prop.PropertyType);
@@ -160,10 +159,8 @@ namespace CoffeDX.Shared
                         {
 
                         }
-
                     }
-                }
-                else prop.SetValue(entity, value);
+                } else prop.SetValue(entity, value);
 
                 if (value == null) throw new Exception("نمط بيانات غير معرف");
             }

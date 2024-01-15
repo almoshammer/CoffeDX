@@ -372,6 +372,13 @@ namespace CoffeDX
             _select.whereList.Append($"{key}={vStr}");
             return this;
         }
+        public IWhere Where(string query)
+        {
+            if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
+            else _select.whereList.Append(" And ");
+            _select.whereList.Append(query);
+            return this;
+        }
         public IWhere Where(DgWhere wh)
         {
             if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
@@ -747,6 +754,7 @@ namespace CoffeDX
         DataTable Get();
         DataRow First();
         IWhere OrderBy(params string[] fields);
+        IWhere Where(string query);
         T First<T>();
         int Update(object model = null);
         int Delete(object model = null);
