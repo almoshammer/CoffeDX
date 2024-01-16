@@ -91,6 +91,13 @@ namespace CoffeDX
             _select.select(fields);
             return this;
         }
+        public ISelect From(params string[] tables)
+        {
+            if (_select == null)
+                _select = new SelectQuery(tableName);
+            _select.from(tables);
+            return this;
+        }
         public ISelect Set(params string[] fields)
         {
             if (_update == null) _update = new UpdateQuery(tableName);
@@ -519,6 +526,11 @@ namespace CoffeDX
             public SelectQuery(string table)
             {
                 this.tables.Add(table);
+            }
+            public SelectQuery from(params string[] tables)
+            {
+                this.tables.AddRange(tables);
+                return this;
             }
             private List<string> fields = new List<string>();
             public SelectQuery select(params string[] fields)
