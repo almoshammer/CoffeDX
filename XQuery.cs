@@ -759,6 +759,8 @@ namespace CoffeDX
     {
         ISelect Join(object table, string field1, string field2);
         ISelect LeftJoin(object table, string field1, string field2);
+        ISelect From(params string[] tables);
+        ISelect Select(params string[] tables);
 
     }
     public interface IWhere : SubWhere
