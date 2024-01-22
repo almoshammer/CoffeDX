@@ -158,7 +158,7 @@ namespace CoffeDX
                 return affectedRows;
             });
         }
-        public int Insert(object model)
+        public long Insert(object model)
         {
             InsertQuery _insert = new InsertQuery(model);
             if (!string.IsNullOrWhiteSpace(this.tableName)) _insert.table = this.tableName;
