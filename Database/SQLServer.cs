@@ -121,15 +121,19 @@ namespace CoffeDX.Database
                 if (conn?.State == ConnectionState.Open)
                 {
                     // ExHanlder.handle(null, ExHanlder.ERR.INS, ExHanlder.PROMP_TYPE.HID, _00CONSTANT.CONN_OPENED);
+                    conn?.Close();
                 }
-                if (conn?.State == System.Data.ConnectionState.Closed) conn?.Open();
-                var result = @object(conn);
-                conn.Close();
-                return result;
+
+                using (conn)
+                {
+                    if (conn?.State == System.Data.ConnectionState.Closed) conn?.Open();
+                    var result = @object(conn);
+                    conn.Close();
+                    return result;
+                }
             }
             catch (System.Exception ex)
             {
-
                 MessageBox.Show(ex.Message);
                 // ExHanlder.handle(ex, ExHanlder.ERR.APP, ExHanlder.PROMP_TYPE.MSG, _00CONSTANT.DB_CONN_ERROR1);
                 // Application.Exit();
