@@ -62,7 +62,7 @@ namespace CoffeDX.Database
             var dbname = DBName;
             if (!string.IsNullOrWhiteSpace(DatabaseName)) dbname = DatabaseName;
 
-            if (string.IsNullOrWhiteSpace(DatabaseName))
+            if (string.IsNullOrWhiteSpace(dbname))
             {
                 MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
                 return @object(conn);
