@@ -102,6 +102,22 @@ namespace CoffeDX
                 }
             });
         }
+        public static SqlDataReader ExecReader(string _query)
+        {
+            return SQLServer.getConnection(conn =>
+            {
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    return cmd.ExecuteReader();
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                    return null;
+                }
+            });
+        }
         public ISelect Select(params string[] fields)
         {
             if (_select == null)
