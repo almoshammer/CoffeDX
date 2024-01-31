@@ -56,7 +56,39 @@ namespace CoffeDX.Database
 
             return getConnection(@object, DBName);
         }
+        public static void getOnlineConnection(DVoid<SqlConnection> @object)
+        {
+            getOnlineConnection(@object, DBName);
+        }
+        public static void getOnlineConnection(DVoid<SqlConnection> @object, string DatabaseName)
+        {
+            var dbname = DBName;
+            if (!string.IsNullOrWhiteSpace(DatabaseName)) dbname = DatabaseName;
 
+            if (string.IsNullOrWhiteSpace(dbname))
+            {
+                MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
+                return;
+            }
+            string connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=True;";
+            if (AUTH_TYPE == AUTHTYPE.LOCAL)
+                connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=True;";
+            else if (AUTH_TYPE == AUTHTYPE.AUTH)
+                connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=True;";
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connStr))
+                {
+                    connection.Open();
+                    @object(connection);
+                    connection.Close();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
         public static T getConnection<T>(DObjectT<T> @object, string DatabaseName)
         {
             var dbname = DBName;
@@ -104,7 +136,6 @@ namespace CoffeDX.Database
                 return @object(conn);
             }
         }
-
         public static void Migrate(Assembly assembly, bool allowDrop = false)
         {
             StringBuilder tables = new StringBuilder();

@@ -102,19 +102,18 @@ namespace CoffeDX
                 }
             },dbname);
         }
-        public static SqlDataReader ExecReader(string _query, string dbname = null)
+        public static void ExecReader(string _query,DVoid<SqlDataReader> reader, string dbname = null)
         {
-            return SQLServer.getConnection(conn =>
+             SQLServer.getOnlineConnection(conn =>
             {
                 try
                 {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    return cmd.ExecuteReader();
+                    var cmd = new SqlCommand(_query, conn); 
+                    reader(cmd.ExecuteReader());
                 }
                 catch (Exception ex)
                 {
                     System.Windows.Forms.MessageBox.Show(ex.Message);
-                    return null;
                 }
             }, dbname);
         }
