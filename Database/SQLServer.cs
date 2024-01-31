@@ -10,6 +10,9 @@ using System.Data.SqlClient;
 using System.Reflection;
 using CoffeDX.Query.Mapping;
 using System.Security;
+using System.IO;
+using Microsoft.SqlServer.Management.Smo;
+using Microsoft.SqlServer.Management.Common;
 
 namespace CoffeDX.Database
 {
@@ -91,6 +94,33 @@ namespace CoffeDX.Database
                 return @object(null);
             }
         }
+        public static bool Restore(string _databaseName,string path,DVoid action)
+        {
+            return getOnlineConnection(conn =>
+            {
+                try
+                {
+                    ServerConnection sc = new ServerConnection((conn as SqlConnection));
+                    Server server = new Server(sc);
+                    Restore destination = new Restore();
+                    destination.Action = RestoreActionType.Database;
+                    destination.Database = _databaseName;
+                    BackupDeviceItem deviceItem = new BackupDeviceItem(path, DeviceType.File);
+                    destination.Devices.Add(deviceItem);
+                    destination.ReplaceDatabase = true;
+                    destination.NoRecovery = true;
+                    server.KillAllProcesses(_databaseName);
+                    server.KillDatabase(_databaseName);
+                    destination.SqlRestore(server);
+                    return true;
+                }
+                catch(SqlException ex)
+                {
+                    MessageBox.Show(ex.Message);
+                    return false;
+                }
+            }, _databaseName);
+        }
         public static T getConnection<T>(DObject<T> @object, string DatabaseName)
         {
             var dbname = DBName;
@@ -125,14 +155,10 @@ namespace CoffeDX.Database
                     // ExHanlder.handle(null, ExHanlder.ERR.INS, ExHanlder.PROMP_TYPE.HID, _00CONSTANT.CONN_OPENED);
                     conn?.Close();
                 }
-
-                using (conn)
-                {
-                    if (conn?.State == System.Data.ConnectionState.Closed) conn?.Open();
-                    var result = @object(conn);
-                    conn.Close();
-                    return result;
-                }
+                if (conn?.State == System.Data.ConnectionState.Closed) conn?.Open();
+                var result = @object(conn);
+                conn.Close();
+                return result;
             }
             catch (System.Exception ex)
             {
