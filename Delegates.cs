@@ -9,5 +9,5 @@ namespace CoffeDX
     public delegate void DVoid();
     public delegate void DVoid<T>(T value);
     public delegate void DObject(object value);
-    public delegate T DObjectT<T>(object value);
+    public delegate T DObject<T>(object value);
 }

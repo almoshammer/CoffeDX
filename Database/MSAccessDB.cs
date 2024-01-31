@@ -23,7 +23,7 @@ namespace CoffeDX.Database
             if (conn != null && conn.State != System.Data.ConnectionState.Closed)
                 conn.Close();
         }
-        public T getConnection<T>(DObjectT<T> @object)
+        public T getConnection<T>(DObject<T> @object)
         {
 
             try

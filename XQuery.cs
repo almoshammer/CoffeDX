@@ -51,7 +51,7 @@ namespace CoffeDX
 
         public static DataTable ExecTable(string _query)
         {
-            return SQLServer.getConnection(conn =>
+            return SQLServer.getOnlineConnection(conn =>
             {
                 DataTable result = new DataTable();
                 try
@@ -68,7 +68,7 @@ namespace CoffeDX
         }
         public static int ExecNon(string _query, string dbname = null)
         {
-            return SQLServer.getConnection(conn =>
+            return SQLServer.getOnlineConnection(conn =>
             {
 
                 try
@@ -84,9 +84,9 @@ namespace CoffeDX
                 return 0;
             }, dbname);
         }
-        public static object ExecScalar(string _query,string dbname=null)
+        public static object ExecScalar(string _query, string dbname = null)
         {
-            return SQLServer.getConnection(conn =>
+            return SQLServer.getOnlineConnection(conn =>
             {
 
                 try
@@ -100,22 +100,23 @@ namespace CoffeDX
                     System.Windows.Forms.MessageBox.Show(ex.Message);
                     return null;
                 }
-            },dbname);
-        }
-        public static void ExecReader(string _query,DVoid<SqlDataReader> reader, string dbname = null)
-        {
-             SQLServer.getOnlineConnection(conn =>
-            {
-                try
-                {
-                    var cmd = new SqlCommand(_query, conn); 
-                    reader(cmd.ExecuteReader());
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
-                }
             }, dbname);
+        }
+        public static void ExecReader(string _query, DVoid<SqlDataReader> reader, string dbname = null)
+        {
+            SQLServer.getOnlineConnection(conn =>
+           {
+               try
+               {
+                   var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                   reader(cmd.ExecuteReader());
+               }
+               catch (Exception ex)
+               {
+                   System.Windows.Forms.MessageBox.Show(ex.Message);
+               }
+               return "";
+           }, dbname);
         }
         public ISelect Select(params string[] fields)
         {

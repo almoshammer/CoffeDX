@@ -51,16 +51,16 @@ namespace CoffeDX.Database
             if (conn != null && conn.State != ConnectionState.Closed)
                 conn.Close();
         }
-        public static T getConnection<T>(DObjectT<T> @object)
+        public static T getConnection<T>(DObject<T> @object)
         {
 
             return getConnection(@object, DBName);
         }
-        public static void getOnlineConnection(DVoid<SqlConnection> @object)
+        public static T getOnlineConnection<T>(DObject<T> @object)
         {
-            getOnlineConnection(@object, DBName);
+            return getOnlineConnection(@object, DBName);
         }
-        public static void getOnlineConnection(DVoid<SqlConnection> @object, string DatabaseName)
+        public static T getOnlineConnection<T>(DObject<T> @object, string DatabaseName)
         {
             var dbname = DBName;
             if (!string.IsNullOrWhiteSpace(DatabaseName)) dbname = DatabaseName;
@@ -68,7 +68,7 @@ namespace CoffeDX.Database
             if (string.IsNullOrWhiteSpace(dbname))
             {
                 MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
-                return;
+                return @object(null);
             }
             string connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=True;";
             if (AUTH_TYPE == AUTHTYPE.LOCAL)
@@ -80,16 +80,18 @@ namespace CoffeDX.Database
                 using (SqlConnection connection = new SqlConnection(connStr))
                 {
                     connection.Open();
-                    @object(connection);
+                    var res = @object(connection);
                     connection.Close();
+                    return res;
                 }
             }
             catch (System.Exception ex)
             {
                 MessageBox.Show(ex.Message);
+                return @object(null);
             }
         }
-        public static T getConnection<T>(DObjectT<T> @object, string DatabaseName)
+        public static T getConnection<T>(DObject<T> @object, string DatabaseName)
         {
             var dbname = DBName;
             if (!string.IsNullOrWhiteSpace(DatabaseName)) dbname = DatabaseName;
