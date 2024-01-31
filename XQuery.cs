@@ -448,13 +448,13 @@ namespace CoffeDX
                 {
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
                     table.Load(cmd.ExecuteReader());
-                    if (table.Rows.Count == 0) table.Rows.Add();
+                    
                 }
                 catch (Exception ex)
                 {
                     System.Windows.Forms.MessageBox.Show(ex.Message);
                 }
-
+                if (table.Rows.Count == 0) table.Rows.Add();
                 return table.Rows[0];
             });
         }
@@ -491,7 +491,7 @@ namespace CoffeDX
                 {
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
                     table.Load(cmd.ExecuteReader());
-                    if (table.Rows.Count == 0) table.Rows.Add();
+                    if (table.Rows.Count == 0) return instance;
                     return DConvert.ToEntity<T>(table.Rows[0]);
                 }
                 catch (Exception ex)
