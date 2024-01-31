@@ -108,9 +108,10 @@ namespace CoffeDX.Database
                     BackupDeviceItem deviceItem = new BackupDeviceItem(path, DeviceType.File);
                     destination.Devices.Add(deviceItem);
                     destination.ReplaceDatabase = true;
-                    destination.NoRecovery = true;
+                  //  destination.NoRecovery = true;
+                  // destination.NoRewind = true;
                     server.KillAllProcesses(_databaseName);
-                    server.KillDatabase(_databaseName);
+                   server.KillDatabase(_databaseName);
                     destination.SqlRestore(server);
                     return true;
                 }
