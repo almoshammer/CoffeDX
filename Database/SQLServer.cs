@@ -57,8 +57,16 @@ namespace CoffeDX.Database
             return getConnection(@object, DBName);
         }
 
-        public static T getConnection<T>(DObjectT<T> @object, string dbname)
+        public static T getConnection<T>(DObjectT<T> @object, string DatabaseName)
         {
+            var dbname = DBName;
+            if (!string.IsNullOrWhiteSpace(DatabaseName)) dbname = DatabaseName;
+
+            if (string.IsNullOrWhiteSpace(DatabaseName))
+            {
+                MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
+                return @object(conn);
+            }
             string connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=True;";
             if (AUTH_TYPE == AUTHTYPE.LOCAL)
                 connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=True;";

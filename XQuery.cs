@@ -66,7 +66,7 @@ namespace CoffeDX
                 return result;
             });
         }
-        public static int ExecNon(string _query)
+        public static int ExecNon(string _query, string dbname = null)
         {
             return SQLServer.getConnection(conn =>
             {
@@ -82,9 +82,9 @@ namespace CoffeDX
                     System.Windows.Forms.MessageBox.Show(ex.Message);
                 }
                 return 0;
-            });
+            }, dbname);
         }
-        public static object ExecScaller(string _query)
+        public static object ExecScalar(string _query,string dbname=null)
         {
             return SQLServer.getConnection(conn =>
             {
@@ -100,9 +100,9 @@ namespace CoffeDX
                     System.Windows.Forms.MessageBox.Show(ex.Message);
                     return null;
                 }
-            });
+            },dbname);
         }
-        public static SqlDataReader ExecReader(string _query)
+        public static SqlDataReader ExecReader(string _query, string dbname = null)
         {
             return SQLServer.getConnection(conn =>
             {
@@ -116,7 +116,7 @@ namespace CoffeDX
                     System.Windows.Forms.MessageBox.Show(ex.Message);
                     return null;
                 }
-            });
+            }, dbname);
         }
         public ISelect Select(params string[] fields)
         {
