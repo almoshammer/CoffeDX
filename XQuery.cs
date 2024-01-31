@@ -84,6 +84,24 @@ namespace CoffeDX
                 return 0;
             });
         }
+        public static object ExecScaller(string _query)
+        {
+            return SQLServer.getConnection(conn =>
+            {
+
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    return cmd.ExecuteScalar();
+
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                    return null;
+                }
+            });
+        }
         public ISelect Select(params string[] fields)
         {
             if (_select == null)
@@ -135,7 +153,7 @@ namespace CoffeDX
         public int Update(object model = null)
         {
             if (_update == null) _update = new UpdateQuery(model);
-            else if(model!=null) _update.SetModel(model);
+            else if (model != null) _update.SetModel(model);
 
             if (!string.IsNullOrWhiteSpace(this.tableName)) _update.table = this.tableName;
             //_update.table = this.tableName;
@@ -448,7 +466,7 @@ namespace CoffeDX
                 {
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
                     table.Load(cmd.ExecuteReader());
-                    
+
                 }
                 catch (Exception ex)
                 {
@@ -546,7 +564,7 @@ namespace CoffeDX
             public string GetQuery()
             {
                 if (this.fields.Count == 0) this.fields.Add("*");
-                return $"SELECT {string.Join(",", this.fields)} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList} {(orderByList.Count == 0 ? "":"ORDER BY")} {string.Join(",", orderByList)}";
+                return $"SELECT {string.Join(",", this.fields)} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList} {(orderByList.Count == 0 ? "" : "ORDER BY")} {string.Join(",", orderByList)}";
             }
             public string GetQueryFirst()
             {
@@ -575,7 +593,7 @@ namespace CoffeDX
                 this.model = model;
                 if (model == null) return;
                 if (model is string) this.table = model.ToString();
-                else 
+                else
                 {
                     if (Attribute.IsDefined(model.GetType(), typeof(DEntityAttribute)))
                     {
@@ -604,7 +622,7 @@ namespace CoffeDX
                     }
                 }
 
-              
+
             }
             public UpdateQuery(object model)
             {
