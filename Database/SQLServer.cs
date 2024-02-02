@@ -94,7 +94,7 @@ namespace CoffeDX.Database
                 return @object(null);
             }
         }
-        public static bool Restore(string _databaseName,string path,DVoid action)
+        public static bool RestoreDB(string _databaseName, string path, DVoid action, bool isAsync = false)
         {
             return getOnlineConnection(conn =>
             {
@@ -108,14 +108,41 @@ namespace CoffeDX.Database
                     BackupDeviceItem deviceItem = new BackupDeviceItem(path, DeviceType.File);
                     destination.Devices.Add(deviceItem);
                     destination.ReplaceDatabase = true;
-                  //  destination.NoRecovery = true;
-                  // destination.NoRewind = true;
+                    //  destination.NoRecovery = true;
+                    // destination.NoRewind = true;
                     server.KillAllProcesses(_databaseName);
-                   server.KillDatabase(_databaseName);
-                    destination.SqlRestore(server);
+                    server.KillDatabase(_databaseName);
+                    if (isAsync) destination.SqlRestoreAsync(server);
+                    else destination.SqlRestore(server);
                     return true;
                 }
-                catch(SqlException ex)
+                catch (SqlException ex)
+                {
+                    MessageBox.Show(ex.Message);
+                    return false;
+                }
+            }, _databaseName);
+        }
+        public static bool BackupDB(string _databaseName, string path, DVoid action, bool isAsync = false)
+        {
+            return getOnlineConnection(conn =>
+            {
+                try
+                {
+                    ServerConnection sc = new ServerConnection((conn as SqlConnection));
+                    Server server = new Server(sc);
+                    Backup destination = new Backup();
+                    destination.Action = BackupActionType.Database;
+                    destination.Database = _databaseName;
+                    BackupDeviceItem deviceItem = new BackupDeviceItem(path, DeviceType.File);
+                    destination.Devices.Add(deviceItem);
+                    server.KillAllProcesses(_databaseName);
+                    server.KillDatabase(_databaseName);
+                    if (isAsync) destination.SqlBackupAsync(server);
+                    else destination.SqlBackup(server);
+                    return true;
+                }
+                catch (SqlException ex)
                 {
                     MessageBox.Show(ex.Message);
                     return false;

@@ -508,7 +508,7 @@ namespace CoffeDX
                     System.Windows.Forms.MessageBox.Show(ex.Message);
                 }
 
-                return 0;
+                return count;
             });
         }
 
