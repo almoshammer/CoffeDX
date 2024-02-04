@@ -630,7 +630,7 @@ namespace CoffeDX
             }
             public string GetQueryValue (string field)
             {
-                return $"SELECT ${field} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
+                return $"SELECT {field} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
             }
         }
         private class UpdateQuery
