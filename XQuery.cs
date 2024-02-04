@@ -513,7 +513,7 @@ namespace CoffeDX
         }
         public object GetValue(string field)
         {
-            string _query = _select.GetQueryCount();
+            string _query = _select.GetQueryValue(field);
             return SQLServer.getConnection(conn =>
             {
                 object value = null;
@@ -530,9 +530,9 @@ namespace CoffeDX
                 return value;
             });
         }
-        public object GetDouble(string field)
+        public double GetDouble(string field)
         {
-            string _query = _select.GetQueryCount();
+            string _query = _select.GetQueryValue(field);
             return SQLServer.getConnection(conn =>
             {
                 double value = 0;
@@ -849,7 +849,8 @@ namespace CoffeDX
         int Delete(object model = null);
         object Max(string fieldName, object @default);
         long Count();
-
+        object GetValue(string field);
+        double GetDouble(string field);
     }
     public interface SubWhere
     {
