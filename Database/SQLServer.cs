@@ -207,7 +207,7 @@ namespace CoffeDX.Database
 
             foreach (var tp in assembly.GetTypes())
             {
-                if (tp.IsClass && tp.IsPublic && Attribute.IsDefined(tp, typeof(DEntityAttribute)))
+                if (tp.IsClass && tp.IsPublic && Attribute.IsDefined(tp, typeof(DEntityAttribute),false))
                 {
                     string table = $"t_{tp.Name}";
                     if (allowDrop)

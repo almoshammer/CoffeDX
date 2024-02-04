@@ -348,7 +348,7 @@ namespace CoffeDX
         {
             string _table = "";
 
-            if (typeof(string) == table.GetType()) _table = table.ToString();
+            if (table is string) _table = table.ToString();
             else if (table is Type)
             {
                 var _type = (table as Type);
@@ -378,7 +378,7 @@ namespace CoffeDX
         {
             string _table = "";
 
-            if (typeof(string) == table.GetType()) _table = table.ToString();
+            if (table is string) _table = table.ToString();
             else if (table is Type)
             {
                 var _type = (table as Type);
@@ -511,7 +511,44 @@ namespace CoffeDX
                 return count;
             });
         }
+        public object GetValue(string field)
+        {
+            string _query = _select.GetQueryCount();
+            return SQLServer.getConnection(conn =>
+            {
+                object value = null;
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    value = cmd.ExecuteScalar();
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                }
 
+                return value;
+            });
+        }
+        public object GetDouble(string field)
+        {
+            string _query = _select.GetQueryCount();
+            return SQLServer.getConnection(conn =>
+            {
+                double value = 0;
+                try
+                {
+                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    value = DConvert.ToDouble(cmd.ExecuteScalar());
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
+                }
+
+                return value;
+            });
+        }
         public T First<T>()
         {
             if (_select == null) _select = new SelectQuery(tableName);
@@ -590,6 +627,10 @@ namespace CoffeDX
             public string GetQueryCount()
             {
                 return $"SELECT count(*) AS rows_count FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
+            }
+            public string GetQueryValue (string field)
+            {
+                return $"SELECT field FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
             }
         }
         private class UpdateQuery
