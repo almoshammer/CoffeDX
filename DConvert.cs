@@ -88,7 +88,9 @@ namespace CoffeDX
             value = value.ToString().Trim();
             string serial = "";
             if ((value + "").StartsWith("-")) serial = "-";
-            foreach (char c in value.ToString().Trim()) if (char.IsDigit(c)) serial += c + "";
+            foreach (char c in value.ToString().Trim())
+                if (char.IsDigit(c)) serial += c + "";
+                else if (c == '.') serial += c + "";
             return (serial.Length == 0 || serial == "-") ? "0" : serial;
         }
         public static double ToDouble(object value, double defaultValue = 0)
@@ -117,7 +119,7 @@ namespace CoffeDX
                 return defaultValue;
             }
             return Convert.ToDecimal(ToNumber(value));
-        }  
+        }
         public static float ToFloat(object value, float defaultValue = 0)
         {
             if (value != null && value.GetType() == typeof(bool)) return Convert.ToInt16(value); ;
@@ -181,7 +183,7 @@ namespace CoffeDX
         {
             DataTable table = new DataTable();
             if (obj == null || obj is string) return table;
-            foreach(var prop in ((Type)obj).GetProperties())
+            foreach (var prop in ((Type)obj).GetProperties())
                 table.Columns.Add(prop.Name, prop.GetType());
             return table;
         }

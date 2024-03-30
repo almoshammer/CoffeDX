@@ -67,7 +67,7 @@ namespace CoffeDX.Shared
         /// <param name="currency">Currency to use</param>
         public NumberToWord(Decimal number, CurrencyInfo currency)
         {
-            InitializeClass(number, currency, String.Empty, "only.", "فقط", "لا غير.");
+            InitializeClass(number, currency, String.Empty, "only.", "", "لا غير.");// "only."","فقط"
         }
 
         /// <summary>
