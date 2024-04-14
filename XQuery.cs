@@ -1,6 +1,5 @@
 ﻿using CoffeDX.Database;
 using CoffeDX.Query.Mapping;
-using CoffeDX.Shared;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -75,7 +74,6 @@ namespace CoffeDX
                 {
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
                     return cmd.ExecuteNonQuery();
-
                 }
                 catch (Exception ex)
                 {
@@ -407,7 +405,8 @@ namespace CoffeDX
         public IWhere Where(string key, object value)
         {
             if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
-            else _select.whereList.Append(" And ");
+            else if (_select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" And ");
+
             string vStr = "";
             if (value.GetType() == typeof(string)) vStr = $"'{value}'"; else vStr = $"{value}";
             _select.whereList.Append($"{key}={vStr}");
@@ -416,14 +415,15 @@ namespace CoffeDX
         public IWhere Where(string query)
         {
             if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
-            else _select.whereList.Append(" And ");
+            else if (_select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" And ");
             _select.whereList.Append(query);
             return this;
         }
         public IWhere Where(DgWhere wh)
         {
             if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
-            else _select.whereList.Append(" And ");
+            else if (_select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" And ");
+
             _select.whereList.Append("(");
             wh(this);
             _select.whereList.Append(")");
@@ -432,7 +432,8 @@ namespace CoffeDX
         public IWhere OrWhere(string key, object value)
         {
             if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
-            else _select.whereList.Append(" Or ");
+            else if (_select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" Or ");
+
             string vStr = "";
             if (value.GetType() == typeof(string)) vStr = $"'{value}'"; else vStr = $"{value}";
             _select.whereList.Append($"{key}={vStr}");
@@ -441,7 +442,8 @@ namespace CoffeDX
         public IWhere OrWhere(DgWhere wh)
         {
             if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
-            else _select.whereList.Append(" Or ");
+            else if ( _select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" Or ");
+
             _select.whereList.Append("(");
             wh(this);
             _select.whereList.Append(")");
