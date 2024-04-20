@@ -73,6 +73,7 @@ namespace CoffeDX
                 try
                 {
                     var cmd = new SqlCommand(_query, (SqlConnection)conn);
+                    cmd.CommandTimeout = 0;
                     return cmd.ExecuteNonQuery();
                 }
                 catch (Exception ex)
@@ -598,6 +599,7 @@ namespace CoffeDX
 
             public SelectQuery(string table)
             {
+                if(table!=null && table.Length > 0)
                 this.tables.Add(table);
             }
             public SelectQuery from(params string[] tables)
