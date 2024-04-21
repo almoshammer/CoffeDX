@@ -13,12 +13,23 @@ using System.Security;
 using System.IO;
 using Microsoft.SqlServer.Management.Smo;
 using Microsoft.SqlServer.Management.Common;
+using CoffeDX.Shared;
+using System.Dynamic;
+using System.Xml.Linq;
 
 namespace CoffeDX.Database
 {
     public enum AUTHTYPE { LOCAL, AUTH }
     public class SQLServer
     {
+        public static string GetConnectionString()
+        {
+            return $"Data Source={ServerName};Initial Catalog={DBName};Integrated Security=True;";
+        }
+        public static string GetConnectionString(string _database)
+        {
+            return $"Data Source={ServerName};Initial Catalog={_database};Integrated Security=True;";
+        }
         public static string DBNamePostfix
         {
             get => KeyValDB.GetString("DABEBASE_POSTFIX");
@@ -54,7 +65,7 @@ namespace CoffeDX.Database
             if (conn != null && conn.State != ConnectionState.Closed)
                 conn.Close();
         }
-        public static T getConnection<T>(DObject<T> @object)
+        public static Task<T> getConnection<T>(DObject<T> @object)
         {
 
             return getConnection(@object, DBName);
@@ -149,7 +160,7 @@ namespace CoffeDX.Database
                 }
             }, _databaseName);
         }
-        public static T getConnection<T>(DObject<T> @object, string DatabaseName)
+        public async static Task<T> getConnection<T>(DObject<T> @object, string DatabaseName)
         {
             var dbname = DBName;
             if (!string.IsNullOrWhiteSpace(DatabaseName)) dbname = DatabaseName;
@@ -159,33 +170,47 @@ namespace CoffeDX.Database
                 MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
                 return @object(conn);
             }
-            string connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=True;";
+            string connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=SSPI;Pooling=false;";
             if (AUTH_TYPE == AUTHTYPE.LOCAL)
-                connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=True;";
+                connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=SSPI;Pooling=false;";
             else if (AUTH_TYPE == AUTHTYPE.AUTH)
-                connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=True;";
+                connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=SSPI;Pooling=false; ";//Connection Lifetime=100;
             try
             {
-                if (conn == null || flag_check_connection == true)
+                //if (conn == null || flag_check_connection == true)
+                //{
+                //    conn = new SqlConnection(connStr);
+                //    conn.StateChange += (s, e) =>
+                //    {
+                //        if (e.CurrentState == ConnectionState.Broken)
+                //        {
+                //            //!error
+                //        }
+                //    };
+                //    flag_check_connection = false;
+                //}
+                //if (conn?.State == ConnectionState.Open)
+                //{
+                //    // ExHanlder.handle(null, ExHanlder.ERR.INS, ExHanlder.PROMP_TYPE.HID, _00CONSTANT.CONN_OPENED);
+                //    conn?.Close();
+                //}
+                //if (conn?.State == System.Data.ConnectionState.Closed) conn?.OpenAsync();
+
+                //var result = @object(conn);
+                ////dynamic result = Activator.CreateInstance<T>();
+                ////using (var cc = new SqlConnection(connStr))
+                ////{
+                ////    cc.Open();
+                ////    result = @object(cc);
+                ////}
+                //conn.Close();
+
+                dynamic result = new ExpandoObject();
+                using (var conn = new SqlConnection(connStr))
                 {
-                    conn = new SqlConnection(connStr);
-                    conn.StateChange += (s, e) =>
-                    {
-                        if (e.CurrentState == ConnectionState.Broken)
-                        {
-                            //!error
-                        }
-                    };
-                    flag_check_connection = false;
+                    await conn.OpenAsync();
+                    result = @object(conn);
                 }
-                if (conn?.State == ConnectionState.Open)
-                {
-                    // ExHanlder.handle(null, ExHanlder.ERR.INS, ExHanlder.PROMP_TYPE.HID, _00CONSTANT.CONN_OPENED);
-                    conn?.Close();
-                }
-                if (conn?.State == System.Data.ConnectionState.Closed) conn?.Open();
-                var result = @object(conn);
-                conn.Close();
                 return result;
             }
             catch (System.Exception ex)
@@ -207,12 +232,11 @@ namespace CoffeDX.Database
 
             foreach (var tp in assembly.GetTypes())
             {
-                if (tp.IsClass && tp.IsPublic && Attribute.IsDefined(tp, typeof(DEntityAttribute),false))
+                if (tp.IsClass && tp.IsPublic && Attribute.IsDefined(tp, typeof(DEntityAttribute), false))
                 {
                     string table = $"t_{tp.Name}";
                     if (allowDrop)
                         tables.Append($"If Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}') Drop Table dbo.{table};\n");
-
 
                     tables.Append($"If Not Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}')\n");
                     tables.Append($"Create Table {table} (\n");
@@ -248,16 +272,15 @@ namespace CoffeDX.Database
                     tables.Append(" ); \n");
                 }
             }
-
-            getConnection<bool>((conn) =>
+            try
             {
-                try
+                using (var connection = new SqlConnection(GetConnectionString()))
                 {
+                    connection.Open();
                     string strTables = tables.ToString();
                     string strKeys = fKeys.ToString();
-
                     /*1*/
-                    var cmd = new SqlCommand(dropRelations.ToString(), (SqlConnection)conn);
+                    var cmd = new SqlCommand(dropRelations.ToString(), connection);
                     if (dropRelations.Length > 10) cmd.ExecuteNonQuery();
                     /*2*/
                     cmd.CommandText = strTables;
@@ -268,15 +291,12 @@ namespace CoffeDX.Database
                         cmd.CommandText = strKeys;
                         cmd.ExecuteNonQuery();
                     }
-                    return true;
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Migrate(getCon..):" + ex.Message);
-                    return false;
-                }
-
-            }, DBName);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Migrate(getCon..):" + ex.Message);
+            }
 
         }
         private static string GetPrimaryKey(Type type)

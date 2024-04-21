@@ -1,5 +1,7 @@
 ﻿using CoffeDX.Database;
 using CoffeDX.Query.Mapping;
+using CoffeDX.Shared;
+using Microsoft.SqlServer.Management.Smo;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -55,8 +57,8 @@ namespace CoffeDX
                 DataTable result = new DataTable();
                 try
                 {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    result.Load(cmd.ExecuteReader());
+                    var command = new SqlCommand(_query, (SqlConnection)conn);
+                    result.Load(command.ExecuteReader());
                 }
                 catch (Exception ex)
                 {
@@ -72,9 +74,9 @@ namespace CoffeDX
 
                 try
                 {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    cmd.CommandTimeout = 0;
-                    return cmd.ExecuteNonQuery();
+                    var command = new SqlCommand(_query, (SqlConnection)conn);
+                    command.CommandTimeout = 0;
+                    return command.ExecuteNonQuery();
                 }
                 catch (Exception ex)
                 {
@@ -90,8 +92,8 @@ namespace CoffeDX
 
                 try
                 {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    return cmd.ExecuteScalar();
+                    var command = new SqlCommand(_query, (SqlConnection)conn);
+                    return command.ExecuteScalar();
 
                 }
                 catch (Exception ex)
@@ -107,8 +109,8 @@ namespace CoffeDX
            {
                try
                {
-                   var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                   reader(cmd.ExecuteReader());
+                   var command = new SqlCommand(_query, (SqlConnection)conn);
+                   reader(command.ExecuteReader());
                }
                catch (Exception ex)
                {
@@ -147,23 +149,14 @@ namespace CoffeDX
         public DataTable Get()
         {
             if (_select == null) _select = new SelectQuery(tableName);
-
-            string _query = _select.GetQuery();
-            return SQLServer.getConnection(conn =>
+            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
             {
                 DataTable table = new DataTable();
-                try
-                {
-                    if (conn == null) return table;
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    table.Load(cmd.ExecuteReader());
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
-                }
+                connection.Open();
+                var command = new SqlCommand(_select.GetQuery(), connection);
+                table.Load(command.ExecuteReader());
                 return table;
-            });
+            }
         }
         public int Update(object model = null)
         {
@@ -172,57 +165,36 @@ namespace CoffeDX
 
             if (!string.IsNullOrWhiteSpace(this.tableName)) _update.table = this.tableName;
             //_update.table = this.tableName;
-            var _query = _update.GetQuery(_select.whereList.ToString());
-            return SQLServer.getConnection(conn =>
-            {
-                var affectedRows = 0;
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    var lst = _update.GetParams();
-                    for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
-                    affectedRows = cmd.ExecuteNonQuery();
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
-                }
 
-                return affectedRows;
-            });
+            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            {
+                connection.Open();
+                var command = new SqlCommand(_update.GetQuery(_select.whereList.ToString()), connection);
+                var lst = _update.GetParams();
+                for (int i = 0; i < lst.Count; i++)
+                    command.Parameters.AddWithValue(lst.GetKey(i).ToString(),
+                        lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
+                return command.ExecuteNonQuery();
+            }
         }
         public long Insert(object model)
         {
             InsertQuery _insert = new InsertQuery(model);
             if (!string.IsNullOrWhiteSpace(this.tableName)) _insert.table = this.tableName;
-            var affectedRows = -1;
+            var output = -1;
             var _query = _insert.GetQuery();
-            return SQLServer.getConnection(conn =>
+
+            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
             {
+                connection.Open();
+                var command = new SqlCommand(_query, connection);
+                var lst = _insert.GetParams();
+                for (int i = 0; i < lst.Count; i++) command.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
 
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    var lst = _insert.GetParams();
-                    for (int i = 0; i < lst.Count; i++) cmd.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
-
-                    if (_query.Contains("Inserted"))
-                    {
-                        object result = cmd.ExecuteScalar();
-                        affectedRows = DConvert.ToInt(result);
-                    }
-                    else
-                    {
-                        affectedRows = cmd.ExecuteNonQuery();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
-                }
-
-                return affectedRows;
-            });
+                if (_query.Contains("Inserted")) output = DConvert.ToInt(command.ExecuteScalar());
+                else output = command.ExecuteNonQuery();//Affected Rows
+                return output;
+            }
         }
 
 
@@ -241,71 +213,59 @@ namespace CoffeDX
                 throw new Exception(message);
                 return 0;
             }
-            return SQLServer.getConnection(@conn =>
-            {
-                try
-                {
-                    SqlBulkCopy sqlBulkCopy = new SqlBulkCopy((SqlConnection)@conn);
-                    sqlBulkCopy.DestinationTableName = table.TableName;
-                    sqlBulkCopy.WriteToServer(table);
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
-                }
 
-                return 1;
-            });
+            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            {
+                connection.Open();
+                SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(connection);
+                sqlBulkCopy.DestinationTableName = table.TableName;
+                sqlBulkCopy.WriteToServer(table);
+                return table.Rows.Count;
+            }
         }
 
         public int InsertList<T>(List<T> list, string tableName)
         {
-            try
+            DataTable table = new DataTable();
+
+            PropertyInfo[] columns = typeof(T).GetProperties();
+            foreach (PropertyInfo item in columns)
             {
-                DataTable table = new DataTable();
-
-                PropertyInfo[] columns = typeof(T).GetProperties();
-                foreach (PropertyInfo item in columns)
-                {
-                    table.Columns.Add(item.Name, item.PropertyType);
-                }
-
-                foreach (T item in list)
-                {
-                    DataRow dr = table.NewRow();
-                    foreach (PropertyInfo col in columns)
-                    {
-                        dr[col.Name] = col.GetValue(item);
-                    }
-                }
-
-                table.TableName = tableName;
-
-                string message = "";
-                if (table == null || table.Rows.Count == 0)
-                {
-                    message = "لايوجد سجلات لاضافتها";
-                    return 0;
-                }
-
-                if (string.IsNullOrWhiteSpace(table.TableName))
-                {
-                    message = "يجب تحديد اسم جدول";
-                    throw new Exception(message);
-                    return 0;
-                }
-                return SQLServer.getConnection(@conn =>
-                {
-                    SqlBulkCopy sqlBulkCopy = new SqlBulkCopy((SqlConnection)@conn);
-                    sqlBulkCopy.DestinationTableName = table.TableName;
-                    sqlBulkCopy.WriteToServer(table);
-                    return 1;
-                });
+                table.Columns.Add(item.Name, item.PropertyType);
             }
-            catch (Exception ex)
+
+            foreach (T item in list)
             {
-                throw new Exception(ex.Message);
+                DataRow dr = table.NewRow();
+                foreach (PropertyInfo col in columns)
+                {
+                    dr[col.Name] = col.GetValue(item);
+                }
+            }
+
+            table.TableName = tableName;
+
+            string message = "";
+            if (table == null || table.Rows.Count == 0)
+            {
+                message = "لايوجد سجلات لاضافتها";
                 return 0;
+            }
+
+            if (string.IsNullOrWhiteSpace(table.TableName))
+            {
+                message = "يجب تحديد اسم جدول";
+                throw new Exception(message);
+                return 0;
+            }
+
+            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            {
+                connection.Open();
+                SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(connection);
+                sqlBulkCopy.DestinationTableName = table.TableName;
+                sqlBulkCopy.WriteToServer(table);
+                return 1;
             }
         }
         public int Delete(object model = null)
@@ -315,20 +275,14 @@ namespace CoffeDX
 
             var _query = _delete.GetQuery(_select.whereList.ToString());
 
-            SQLServer.getConnection<int>(conn =>
+            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
             {
-                try
-                {
-                    var affectedRows = new SqlCommand(_query, (SqlConnection)conn).ExecuteNonQuery();
-                    return affectedRows;
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception(ex.Message);
-                    return -1;
-                }
-            });
-            return 0;
+                connection.Open();
+                var command = new SqlCommand(_query, connection);
+                command.CommandTimeout = 60;
+                var affectedRows = new SqlCommand(_query, connection).ExecuteNonQuery();
+                return affectedRows;
+            }
         }
 
         public ISelect Between(string field, object value1, object value2)
@@ -443,7 +397,7 @@ namespace CoffeDX
         public IWhere OrWhere(DgWhere wh)
         {
             if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
-            else if ( _select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" Or ");
+            else if (_select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" Or ");
 
             _select.whereList.Append("(");
             wh(this);
@@ -457,125 +411,76 @@ namespace CoffeDX
             _select.select($"IIF(MAX({fieldName}) IS NULL,0,MAX({fieldName}))");
 
             string _query = _select.GetQuery();
-            return SQLServer.getConnection(conn =>
-            {
-                try
-                {
-                    DataTable table = new DataTable();
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    return cmd.ExecuteScalar();
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
-                    return 0;
-                }
 
-            });
+            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            {
+                connection.Open();
+                var command = new SqlCommand(_query, connection);
+                return command.ExecuteScalar();
+            }
         }
         public DataRow First()
         {
             if (_select == null) _select = new SelectQuery(tableName);
-
             string _query = _select.GetQueryFirst();
-            return SQLServer.getConnection(conn =>
+            DataTable table = new DataTable();
+            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
             {
-                DataTable table = new DataTable();
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    table.Load(cmd.ExecuteReader());
-
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
-                }
-                if (table.Rows.Count == 0) table.Rows.Add();
-                return table.Rows[0];
-            });
+                connection.Open();
+                var command = new SqlCommand(_query, connection);
+                table.Load(command.ExecuteReader());
+            }
+            if (table.Rows.Count == 0) table.Rows.Add();
+            return table.Rows[0];
         }
         public long Count()
         {
             string _query = _select.GetQueryCount();
-            return SQLServer.getConnection(conn =>
+            long count = 0;
+            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
             {
-                long count = 0;
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    count = DConvert.ToLong(cmd.ExecuteScalar());
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
-                }
-
-                return count;
-            });
+                connection.Open();
+                var command = new SqlCommand(_query, connection);
+                count = DConvert.ToLong(command.ExecuteScalar());
+            }
+            return count;
         }
         public object GetValue(string field)
         {
             string _query = _select.GetQueryValue(field);
-            return SQLServer.getConnection(conn =>
+            object value = null;
+            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
             {
-                object value = null;
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    value = cmd.ExecuteScalar();
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
-                }
-
-                return value;
-            });
+                connection.Open();
+                var command = new SqlCommand(_query, connection);
+                value = command.ExecuteScalar();
+            }
+            return value;
         }
         public double GetDouble(string field)
         {
             string _query = _select.GetQueryValue(field);
-            return SQLServer.getConnection(conn =>
+            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
             {
-                double value = 0;
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    value = DConvert.ToDouble(cmd.ExecuteScalar());
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
-                }
-
-                return value;
-            });
+                connection.Open();
+                var command = new SqlCommand(_query, connection);
+                return DConvert.ToDouble(command.ExecuteScalar());
+            }
         }
         public T First<T>()
         {
+            DataTable table = new DataTable();
             if (_select == null) _select = new SelectQuery(tableName);
             T instance = Activator.CreateInstance<T>();
             string _query = _select.GetQueryFirst();
-            return SQLServer.getConnection(conn =>
+            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
             {
-                DataTable table = new DataTable();
-
-                try
-                {
-                    var cmd = new SqlCommand(_query, (SqlConnection)conn);
-                    table.Load(cmd.ExecuteReader());
-                    if (table.Rows.Count == 0) return instance;
-                    return DConvert.ToEntity<T>(table.Rows[0]);
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.Forms.MessageBox.Show(ex.Message);
-                }
-
-
-                return instance;
-            });
+                connection.Open();
+                var command = new SqlCommand(_query, connection);
+                table.Load(command.ExecuteReader());
+                if (table.Rows.Count == 0) return instance;
+                return DConvert.ToEntity<T>(table.Rows[0]);
+            }
         }
 
         public IWhere OrderBy(params string[] fields)
@@ -599,8 +504,8 @@ namespace CoffeDX
 
             public SelectQuery(string table)
             {
-                if(table!=null && table.Length > 0)
-                this.tables.Add(table);
+                if (table != null && table.Length > 0)
+                    this.tables.Add(table);
             }
             public SelectQuery from(params string[] tables)
             {
@@ -632,7 +537,7 @@ namespace CoffeDX
             {
                 return $"SELECT count(*) AS rows_count FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
             }
-            public string GetQueryValue (string field)
+            public string GetQueryValue(string field)
             {
                 return $"SELECT {field} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
             }
