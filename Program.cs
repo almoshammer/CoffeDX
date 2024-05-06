@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 namespace CoffeDX
 {
-    public enum ON_CONSTRAINT_EVENT { NOACTION,CASECASE };
+    public enum ON_CONSTRAINT_EVENT { NOACTION, CASCADE };
     //public static class Program
     //{
     //    public static void Main()

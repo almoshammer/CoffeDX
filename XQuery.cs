@@ -148,15 +148,22 @@ namespace CoffeDX
 
         public DataTable Get()
         {
-            if (_select == null) _select = new SelectQuery(tableName);
-            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            DataTable table = new DataTable();
+            try
             {
-                DataTable table = new DataTable();
-                connection.Open();
-                var command = new SqlCommand(_select.GetQuery(), connection);
-                table.Load(command.ExecuteReader());
-                return table;
+                if (_select == null) _select = new SelectQuery(tableName);
+                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                {
+                    connection.Open();
+                    var command = new SqlCommand(_select.GetQuery(), connection);
+                    table.Load(command.ExecuteReader());
+                }
             }
+            catch (SqlException e)
+            {
+                System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
+            }
+            return table;
         }
         public int Update(object model = null)
         {
@@ -166,15 +173,23 @@ namespace CoffeDX
             if (!string.IsNullOrWhiteSpace(this.tableName)) _update.table = this.tableName;
             //_update.table = this.tableName;
 
-            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            try
             {
-                connection.Open();
-                var command = new SqlCommand(_update.GetQuery(_select.whereList.ToString()), connection);
-                var lst = _update.GetParams();
-                for (int i = 0; i < lst.Count; i++)
-                    command.Parameters.AddWithValue(lst.GetKey(i).ToString(),
-                        lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
-                return command.ExecuteNonQuery();
+                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                {
+                    connection.Open();
+                    var command = new SqlCommand(_update.GetQuery(_select.whereList.ToString()), connection);
+                    var lst = _update.GetParams();
+                    for (int i = 0; i < lst.Count; i++)
+                        command.Parameters.AddWithValue(lst.GetKey(i).ToString(),
+                            lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
+                    return command.ExecuteNonQuery();
+                }
+            }
+            catch (SqlException e)
+            {
+                System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
+                return -1;
             }
         }
         public long Insert(object model)
@@ -184,16 +199,24 @@ namespace CoffeDX
             var output = -1;
             var _query = _insert.GetQuery();
 
-            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            try
             {
-                connection.Open();
-                var command = new SqlCommand(_query, connection);
-                var lst = _insert.GetParams();
-                for (int i = 0; i < lst.Count; i++) command.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
+                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                {
+                    connection.Open();
+                    var command = new SqlCommand(_query, connection);
+                    var lst = _insert.GetParams();
+                    for (int i = 0; i < lst.Count; i++) command.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
 
-                if (_query.Contains("Inserted")) output = DConvert.ToInt(command.ExecuteScalar());
-                else output = command.ExecuteNonQuery();//Affected Rows
-                return output;
+                    if (_query.Contains("Inserted")) output = DConvert.ToInt(command.ExecuteScalar());
+                    else output = command.ExecuteNonQuery();//Affected Rows
+                    return output;
+                }
+            }
+            catch (SqlException e)
+            {
+                System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
+                return -1;
             }
         }
 
@@ -211,16 +234,22 @@ namespace CoffeDX
             {
                 message = "يجب تحديد اسم جدول";
                 throw new Exception(message);
-                return 0;
             }
-
-            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            try
             {
-                connection.Open();
-                SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(connection);
-                sqlBulkCopy.DestinationTableName = table.TableName;
-                sqlBulkCopy.WriteToServer(table);
-                return table.Rows.Count;
+                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                {
+                    connection.Open();
+                    SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(connection);
+                    sqlBulkCopy.DestinationTableName = table.TableName;
+                    sqlBulkCopy.WriteToServer(table);
+                    return table.Rows.Count;
+                }
+            }
+            catch (SqlException e)
+            {
+                System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
+                return 0;
             }
         }
 
@@ -259,14 +288,23 @@ namespace CoffeDX
                 return 0;
             }
 
-            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            try
             {
-                connection.Open();
-                SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(connection);
-                sqlBulkCopy.DestinationTableName = table.TableName;
-                sqlBulkCopy.WriteToServer(table);
-                return 1;
+                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                {
+                    connection.Open();
+                    SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(connection);
+                    sqlBulkCopy.DestinationTableName = table.TableName;
+                    sqlBulkCopy.WriteToServer(table);
+                    return 1;
+                }
             }
+            catch (SqlException e)
+            {
+                System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
+                return 0;
+            }
+
         }
         public int Delete(object model = null)
         {
@@ -275,14 +313,23 @@ namespace CoffeDX
 
             var _query = _delete.GetQuery(_select.whereList.ToString());
 
-            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            try
             {
-                connection.Open();
-                var command = new SqlCommand(_query, connection);
-                command.CommandTimeout = 60;
-                var affectedRows = new SqlCommand(_query, connection).ExecuteNonQuery();
-                return affectedRows;
+                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                {
+                    connection.Open();
+                    var command = new SqlCommand(_query, connection);
+                    command.CommandTimeout = 60;
+                    var affectedRows = new SqlCommand(_query, connection).ExecuteNonQuery();
+                    return affectedRows;
+                }
             }
+            catch (SqlException e)
+            {
+                System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
+                return 0;
+            }
+
         }
 
         public ISelect Between(string field, object value1, object value2)
@@ -424,24 +471,44 @@ namespace CoffeDX
             if (_select == null) _select = new SelectQuery(tableName);
             string _query = _select.GetQueryFirst();
             DataTable table = new DataTable();
-            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+
+            try
             {
-                connection.Open();
-                var command = new SqlCommand(_query, connection);
-                table.Load(command.ExecuteReader());
+                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                {
+                    connection.Open();
+                    var command = new SqlCommand(_query, connection);
+                    table.Load(command.ExecuteReader());
+                }
             }
-            if (table.Rows.Count == 0) table.Rows.Add();
+            catch (SqlException e)
+            {
+                System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
+            }
+            finally
+            {
+                if (table.Rows.Count == 0) table.Rows.Add();
+            }
+
             return table.Rows[0];
         }
         public long Count()
         {
             string _query = _select.GetQueryCount();
             long count = 0;
-            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            try
             {
-                connection.Open();
-                var command = new SqlCommand(_query, connection);
-                count = DConvert.ToLong(command.ExecuteScalar());
+                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                {
+                    connection.Open();
+                    var command = new SqlCommand(_query, connection);
+                    count = DConvert.ToLong(command.ExecuteScalar());
+                }
+            }
+            catch (SqlException e)
+            {
+                System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
+                return 0;
             }
             return count;
         }
@@ -449,22 +516,38 @@ namespace CoffeDX
         {
             string _query = _select.GetQueryValue(field);
             object value = null;
-            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            try
             {
-                connection.Open();
-                var command = new SqlCommand(_query, connection);
-                value = command.ExecuteScalar();
+                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                {
+                    connection.Open();
+                    var command = new SqlCommand(_query, connection);
+                    value = command.ExecuteScalar();
+                }
+            }
+            catch (SqlException e)
+            {
+                System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
+                return 0;
             }
             return value;
         }
         public double GetDouble(string field)
         {
             string _query = _select.GetQueryValue(field);
-            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            try
             {
-                connection.Open();
-                var command = new SqlCommand(_query, connection);
-                return DConvert.ToDouble(command.ExecuteScalar());
+                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                {
+                    connection.Open();
+                    var command = new SqlCommand(_query, connection);
+                    return DConvert.ToDouble(command.ExecuteScalar());
+                }
+            }
+            catch (SqlException e)
+            {
+                System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
+                return 0;
             }
         }
         public T First<T>()
@@ -473,16 +556,24 @@ namespace CoffeDX
             if (_select == null) _select = new SelectQuery(tableName);
             T instance = Activator.CreateInstance<T>();
             string _query = _select.GetQueryFirst();
-            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+
+            try
             {
-                connection.Open();
-                var command = new SqlCommand(_query, connection);
-                table.Load(command.ExecuteReader());
-                if (table.Rows.Count == 0) return instance;
-                return DConvert.ToEntity<T>(table.Rows[0]);
+                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                {
+                    connection.Open();
+                    var command = new SqlCommand(_query, connection);
+                    table.Load(command.ExecuteReader());
+                    if (table.Rows.Count == 0) return instance;
+                    return DConvert.ToEntity<T>(table.Rows[0]);
+                }
+            }
+            catch (SqlException e)
+            {
+                System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
+                return instance;
             }
         }
-
         public IWhere OrderBy(params string[] fields)
         {
             if (_select == null) _select = new SelectQuery(this.tableName);

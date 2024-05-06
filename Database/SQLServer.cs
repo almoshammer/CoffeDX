@@ -235,7 +235,7 @@ namespace CoffeDX.Database
                 if (tp.IsClass && tp.IsPublic && Attribute.IsDefined(tp, typeof(DEntityAttribute), false))
                 {
                     string table = $"t_{tp.Name}";
-                    if (allowDrop)
+                    if (allowDrop) 
                         tables.Append($"If Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}') Drop Table dbo.{table};\n");
 
                     tables.Append($"If Not Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}')\n");
@@ -252,7 +252,7 @@ namespace CoffeDX.Database
                             var fAttr = prop.GetCustomAttribute<DForeignKeyAttribute>();
                             var parentKey = fAttr.ParentKey;
 
-                            var on_constr_event = fAttr.constraint_event == ON_CONSTRAINT_EVENT.CASECASE ? "ON DELETE CASECASE" : "";
+                            var on_constr_event = fAttr.constraint_event == ON_CONSTRAINT_EVENT.CASCADE ? "ON DELETE CASCADE" : "";
 
                             if (parentKey == null || parentKey.Length == 0)
                                 parentKey = GetPrimaryKey(fAttr.ParentModel);
@@ -260,11 +260,11 @@ namespace CoffeDX.Database
                             var ctr_name = $"fk_{table}_TO_t_{fAttr.ParentModel.Name}";
                             if (allowDrop)
                             {
-                                dropRelations.Append($"If Exists(Select * From Information_Schema.REFERENTIAL_CONSTRAINTS Where CONSTRAINT_NAME = '{ctr_name}')\n");
-                                dropRelations.Append($"Alter table {table} Drop Constraint {ctr_name};\n");
+                                dropRelations.Append($"IF EXISTS(SELECT * FROM Information_Schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_NAME = '{ctr_name}')\n");
+                                dropRelations.Append($"ALTER TABLE {table} DROP CONSTRAINT {ctr_name};\n");
                             }
-                            fKeys.Append($"If Not Exists(Select * From Information_Schema.REFERENTIAL_CONSTRAINTS Where CONSTRAINT_NAME = '{ctr_name}')\n");
-                            fKeys.Append($"Alter Table dbo.{table} With NoCheck Add Constraint {ctr_name} Foreign Key({prop.Name}) References dbo.t_{fAttr.ParentModel.Name}({parentKey}) {on_constr_event};\n");
+                            fKeys.Append($"IF NOT EXISTS(SELECT * FROM Information_Schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_NAME = '{ctr_name}')\n");
+                            fKeys.Append($"ALTER TABLE dbo.{table} WITH NOCHECK ADD CONSTRAINT {ctr_name} FOREIGN KEY({prop.Name}) REFERENCES dbo.t_{fAttr.ParentModel.Name}({parentKey}) {on_constr_event};\n");
                             // new DKeyValue(prop.Name, fAttr.ParentModel)
                         }
                         tables.Append($"{typeName},\n");
@@ -286,7 +286,7 @@ namespace CoffeDX.Database
                     cmd.CommandText = strTables;
                     cmd.ExecuteNonQuery();
                     /*3*/
-                    if (strKeys != null && strKeys.Length > 10 && strKeys.Contains("Alter"))
+                    if (strKeys != null && strKeys.Length > 10 && strKeys.ToLower().Contains("alter"))
                     {
                         cmd.CommandText = strKeys;
                         cmd.ExecuteNonQuery();
