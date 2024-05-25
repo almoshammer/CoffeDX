@@ -49,7 +49,6 @@ namespace CoffeDX
             if (_select == null)
                 _select = new SelectQuery(this.tableName);
         }
-
         public static DataTable ExecTable(string _query)
         {
             return SQLServer.getOnlineConnection(conn =>
