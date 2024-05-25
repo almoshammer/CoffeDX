@@ -228,14 +228,15 @@ namespace CoffeDX.Database
 
 
             StringBuilder dropRelations = new StringBuilder();
+            StringBuilder indexes = new StringBuilder();
 
-
+            /* Generate Scripts */
             foreach (var tp in assembly.GetTypes())
             {
                 if (tp.IsClass && tp.IsPublic && Attribute.IsDefined(tp, typeof(DEntityAttribute), false))
                 {
                     string table = $"t_{tp.Name}";
-                    if (allowDrop) 
+                    if (allowDrop)
                         tables.Append($"If Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}') Drop Table dbo.{table};\n");
 
                     tables.Append($"If Not Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}')\n");
@@ -270,25 +271,45 @@ namespace CoffeDX.Database
                         tables.Append($"{typeName},\n");
                     }
                     tables.Append(" ); \n");
+
+                    if (Attribute.IsDefined(tp, typeof(DNonClusteredIndexAttribute), false))
+                    {
+                        var ix = tp.GetCustomAttribute<DNonClusteredIndexAttribute>();
+                        var includes = ix.includes != null && ix.includes.Length > 0 ? "INCLUDE(" + string.Join(",", ix.includes) + ")" : "";
+                        //create nonclustered index [IX_t_Journal_analytic_id] on t_Journal
+                        var ix_name = $"IX_{table}";
+                        var cix_scrpt = $"CREATE NONCLUSTERED INDEX {ix_name} ON {table}({string.Join(",", ix.fields)}) {includes}";
+                        indexes.Append($"IF NOT EXISTS(SELECT * FROM sys.indexes WHERE name='{ix_name}')\n");
+                        indexes.Append(cix_scrpt + ";");
+                        indexes.Append($"ELSE {cix_scrpt} WITH (DROP_EXISTING = ON);\n");
+                    }
                 }
             }
+            /* /Generate Scripts */
             try
             {
                 using (var connection = new SqlConnection(GetConnectionString()))
                 {
                     connection.Open();
-                    string strTables = tables.ToString();
-                    string strKeys = fKeys.ToString();
-                    /*1*/
+                    var strTables = tables?.ToString();
+                    var strKeys = fKeys?.ToString();
+                    var Indx = indexes?.ToString();
+                    /*1: Drop The Old Relations*/
                     var cmd = new SqlCommand(dropRelations.ToString(), connection);
                     if (dropRelations.Length > 10) cmd.ExecuteNonQuery();
-                    /*2*/
+                    /*2: Alter tables*/
                     cmd.CommandText = strTables;
                     cmd.ExecuteNonQuery();
-                    /*3*/
+                    /*3: Add The New Relations*/
                     if (strKeys != null && strKeys.Length > 10 && strKeys.ToLower().Contains("alter"))
                     {
                         cmd.CommandText = strKeys;
+                        cmd.ExecuteNonQuery();
+                    }
+                    /*4: Add New Indexes*/
+                    if (Indx != null && Indx.Length > 10)//10: to insure no white spaces
+                    {
+                        cmd.CommandText = Indx;
                         cmd.ExecuteNonQuery();
                     }
                 }

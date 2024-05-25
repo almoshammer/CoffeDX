@@ -82,7 +82,7 @@
     <Compile Include="Query\Mapping\DColumnAttribute.cs" />
     <Compile Include="Query\Mapping\DEntityAttribute.cs" />
     <Compile Include="Query\Mapping\DForeignKeyAttribute.cs" />
-    <Compile Include="Query\Mapping\DIndexAttribute.cs" />
+    <Compile Include="Query\Mapping\DNonClusteredIndexAttribute.cs" />
     <Compile Include="Query\Mapping\DKeyTwoValues.cs" />
     <Compile Include="Query\Mapping\DKeyValue.cs" />
     <Compile Include="Query\Mapping\DIncrementalAttribute.cs" />
