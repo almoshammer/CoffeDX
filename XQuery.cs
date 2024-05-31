@@ -147,7 +147,7 @@ namespace CoffeDX
 
         public DataTable Get()
         {
-            DataTable table = new DataTable();
+            var table = new DataTable();
             try
             {
                 if (_select == null) _select = new SelectQuery(tableName);
@@ -177,11 +177,13 @@ namespace CoffeDX
                 using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
                 {
                     connection.Open();
+
                     var command = new SqlCommand(_update.GetQuery(_select.whereList.ToString()), connection);
                     var lst = _update.GetParams();
                     for (int i = 0; i < lst.Count; i++)
                         command.Parameters.AddWithValue(lst.GetKey(i).ToString(),
                             lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
+                    command.CommandTimeout = 120;
                     return command.ExecuteNonQuery();
                 }
             }
@@ -193,7 +195,7 @@ namespace CoffeDX
         }
         public long Insert(object model)
         {
-            InsertQuery _insert = new InsertQuery(model);
+            var _insert = new InsertQuery(model);
             if (!string.IsNullOrWhiteSpace(this.tableName)) _insert.table = this.tableName;
             var output = -1;
             var _query = _insert.GetQuery();
@@ -222,7 +224,7 @@ namespace CoffeDX
 
         public int InsertTable(DataTable table)
         {
-            string message = "";
+            var message = "";
             if (table == null || table.Rows.Count == 0)
             {
                 message = "لايوجد سجلات لاضافتها";
@@ -254,10 +256,10 @@ namespace CoffeDX
 
         public int InsertList<T>(List<T> list, string tableName)
         {
-            DataTable table = new DataTable();
+            var table = new DataTable();
 
-            PropertyInfo[] columns = typeof(T).GetProperties();
-            foreach (PropertyInfo item in columns)
+            var columns = typeof(T).GetProperties();
+            foreach (var item in columns)
             {
                 table.Columns.Add(item.Name, item.PropertyType);
             }
@@ -273,7 +275,7 @@ namespace CoffeDX
 
             table.TableName = tableName;
 
-            string message = "";
+            var message = "";
             if (table == null || table.Rows.Count == 0)
             {
                 message = "لايوجد سجلات لاضافتها";
@@ -292,7 +294,7 @@ namespace CoffeDX
                 using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
                 {
                     connection.Open();
-                    SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(connection);
+                    var sqlBulkCopy = new SqlBulkCopy(connection);
                     sqlBulkCopy.DestinationTableName = table.TableName;
                     sqlBulkCopy.WriteToServer(table);
                     return 1;
@@ -318,7 +320,7 @@ namespace CoffeDX
                 {
                     connection.Open();
                     var command = new SqlCommand(_query, connection);
-                    command.CommandTimeout = 60;
+                    command.CommandTimeout = 120;
                     var affectedRows = new SqlCommand(_query, connection).ExecuteNonQuery();
                     return affectedRows;
                 }
@@ -375,7 +377,7 @@ namespace CoffeDX
         }
         public ISelect LeftJoin(object table, string field1, string field2)
         {
-            string _table = "";
+            var _table = "";
 
             if (table is string) _table = table.ToString();
             else if (table is Type)
@@ -435,7 +437,7 @@ namespace CoffeDX
             if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
             else if (_select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" Or ");
 
-            string vStr = "";
+            var vStr = "";
             if (value.GetType() == typeof(string)) vStr = $"'{value}'"; else vStr = $"{value}";
             _select.whereList.Append($"{key}={vStr}");
             return this;
@@ -456,7 +458,7 @@ namespace CoffeDX
             if (_select == null) _select = new SelectQuery(tableName);
             _select.select($"IIF(MAX({fieldName}) IS NULL,0,MAX({fieldName}))");
 
-            string _query = _select.GetQuery();
+            var _query = _select.GetQuery();
 
             using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
             {
@@ -468,8 +470,8 @@ namespace CoffeDX
         public DataRow First()
         {
             if (_select == null) _select = new SelectQuery(tableName);
-            string _query = _select.GetQueryFirst();
-            DataTable table = new DataTable();
+            var _query = _select.GetQueryFirst();
+            var table = new DataTable();
 
             try
             {
@@ -493,8 +495,8 @@ namespace CoffeDX
         }
         public long Count()
         {
-            string _query = _select.GetQueryCount();
-            long count = 0;
+            var _query = _select.GetQueryCount();
+            var count = 0l;
             try
             {
                 using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
@@ -513,7 +515,7 @@ namespace CoffeDX
         }
         public object GetValue(string field)
         {
-            string _query = _select.GetQueryValue(field);
+            var _query = _select.GetQueryValue(field);
             object value = null;
             try
             {
@@ -533,7 +535,7 @@ namespace CoffeDX
         }
         public double GetDouble(string field)
         {
-            string _query = _select.GetQueryValue(field);
+            var _query = _select.GetQueryValue(field);
             try
             {
                 using (var connection = new SqlConnection(SQLServer.GetConnectionString()))

@@ -57,6 +57,6 @@ D:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.Database.FrmSetupSqlServe
 D:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.Properties.Resources.resources
 D:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.csproj.GenerateResource.cache
 D:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.csproj.CoreCompileInputs.cache
-D:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.csproj.CopyComplete
 D:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.dll
 D:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.pdb
+D:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.csproj.Up2Date
