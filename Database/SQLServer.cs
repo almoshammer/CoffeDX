@@ -290,24 +290,26 @@ namespace CoffeDX.Database
             {
                 using (var connection = new SqlConnection(GetConnectionString()))
                 {
+                  
                     connection.Open();
                     var strTables = tables?.ToString();
                     var strKeys = fKeys?.ToString();
                     var Indx = indexes?.ToString();
-                    /*1: Drop The Old Relations*/
+                    /* 1: Drop The Old Relations*/
                     var cmd = new SqlCommand(dropRelations.ToString(), connection);
+                    cmd.CommandTimeout = 240;
                     if (dropRelations.Length > 10) cmd.ExecuteNonQuery();
-                    /*2: Alter tables*/
+                    /* 2: Alter tables*/
                     cmd.CommandText = strTables;
                     cmd.ExecuteNonQuery();
-                    /*3: Add The New Relations*/
+                    /* 3: Add The New Relations*/
                     if (strKeys != null && strKeys.Length > 10 && strKeys.ToLower().Contains("alter"))
                     {
                         cmd.CommandText = strKeys;
                         cmd.ExecuteNonQuery();
                     }
-                    /*4: Add New Indexes*/
-                    if (Indx != null && Indx.Length > 10)//10: to insure no white spaces
+                    /* 4: Add New Indexes*/
+                    if (Indx != null && Indx.Length > 10)// Length(10): To insure that there're no white spaces
                     {
                         cmd.CommandText = Indx;
                         cmd.ExecuteNonQuery();
@@ -341,8 +343,17 @@ namespace CoffeDX.Database
             if (tp == typeof(string)) return "Varchar(MAX) NULL";
             if (tp == typeof(char)) return "Char";
             if (tp == typeof(int)) return "Int";
-            if (tp == typeof(DateTime)) return "Date";
-            if (tp == typeof(DateTimeOffset)) return "DateTimeOffset";
+           
+            if (tp == typeof(DateTime))
+            {
+                if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIME(7)";
+                return "Date";
+            }
+            if (tp == typeof(DateTimeOffset))
+            {
+                if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIME(7)";
+                return "DateTimeOffset";
+            }
             if (tp == typeof(double)) return "Float default 0";
             if (tp == typeof(float)) return "Float default 0";
             if (tp == typeof(decimal)) return "Float default 0";
@@ -352,8 +363,16 @@ namespace CoffeDX.Database
             if (tp == typeof(bool?)) return "BIT NULL";
             if (tp == typeof(char?)) return "Char NULL";
             if (tp == typeof(int?)) return "Int NULL";
-            if (tp == typeof(DateTime?)) return "Date NULL";
-            if (tp == typeof(DateTimeOffset?)) return "DateTimeOffset NULL";
+            if (tp == typeof(DateTime?))
+            {
+                if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIME(7) NULL";
+                return "Date NULL";
+            }
+            if (tp == typeof(DateTimeOffset?))
+            {
+                if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIME(7) NULL";
+                return "DateTimeOffset NULL";
+            }
             if (tp == typeof(double?)) return "Float NULL default 0";
             if (tp == typeof(float?)) return "Float NULL default 0";
             if (tp == typeof(decimal?)) return "Float NULL default 0";

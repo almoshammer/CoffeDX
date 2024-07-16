@@ -553,10 +553,10 @@ namespace CoffeDX
         }
         public T First<T>()
         {
-            DataTable table = new DataTable();
+            var table = new DataTable();
             if (_select == null) _select = new SelectQuery(tableName);
-            T instance = Activator.CreateInstance<T>();
-            string _query = _select.GetQueryFirst();
+            var instance = Activator.CreateInstance<T>();
+            var _query = _select.GetQueryFirst();
 
             try
             {

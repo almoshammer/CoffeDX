@@ -88,6 +88,7 @@
     <Compile Include="Query\Mapping\DIncrementalAttribute.cs" />
     <Compile Include="Query\Mapping\DPreventUpdateAttribute.cs" />
     <Compile Include="Query\Mapping\DPrimaryKeyAttribute.cs" />
+    <Compile Include="Query\Mapping\DTimeAttribute.cs" />
     <Compile Include="Shared\CheckType.cs" />
     <Compile Include="Shared\Database.cs" />
     <Compile Include="DSqlServerHelper.cs" />
