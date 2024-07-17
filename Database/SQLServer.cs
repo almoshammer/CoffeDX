@@ -290,7 +290,7 @@ namespace CoffeDX.Database
             {
                 using (var connection = new SqlConnection(GetConnectionString()))
                 {
-                  
+
                     connection.Open();
                     var strTables = tables?.ToString();
                     var strKeys = fKeys?.ToString();
@@ -343,7 +343,7 @@ namespace CoffeDX.Database
             if (tp == typeof(string)) return "Varchar(MAX) NULL";
             if (tp == typeof(char)) return "Char";
             if (tp == typeof(int)) return "Int";
-           
+
             if (tp == typeof(DateTime))
             {
                 if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIME(7)";
@@ -354,6 +354,7 @@ namespace CoffeDX.Database
                 if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIME(7)";
                 return "DateTimeOffset";
             }
+            if (tp == typeof(TimeSpan)) return "TIME(7)";
             if (tp == typeof(double)) return "Float default 0";
             if (tp == typeof(float)) return "Float default 0";
             if (tp == typeof(decimal)) return "Float default 0";
@@ -373,6 +374,7 @@ namespace CoffeDX.Database
                 if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIME(7) NULL";
                 return "DateTimeOffset NULL";
             }
+            if (tp == typeof(TimeSpan?)) return "TIME(7) NULL";
             if (tp == typeof(double?)) return "Float NULL default 0";
             if (tp == typeof(float?)) return "Float NULL default 0";
             if (tp == typeof(decimal?)) return "Float NULL default 0";
