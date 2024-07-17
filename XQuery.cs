@@ -459,12 +459,19 @@ namespace CoffeDX
             _select.select($"IIF(MAX({fieldName}) IS NULL,0,MAX({fieldName}))");
 
             var _query = _select.GetQuery();
-
-            using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+            try
             {
-                connection.Open();
-                var command = new SqlCommand(_query, connection);
-                return command.ExecuteScalar();
+                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                {
+                    connection.Open();
+                    var command = new SqlCommand(_query, connection);
+                    return command.ExecuteScalar();
+                }
+            }
+            catch (SqlException e)
+            {
+                System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
+                return 0;
             }
         }
         public DataRow First()
