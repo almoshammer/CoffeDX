@@ -1,7 +1,9 @@
 ﻿using CoffeDX.Query.Mapping;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
+using Oracle.ManagedDataAccess.Client;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Dynamic;
@@ -12,41 +14,41 @@ using System.Windows.Forms;
 
 namespace CoffeDX.Database
 {
-    public enum AUTHTYPE { LOCAL, AUTH }
-    public class SQLServer
+    public enum ORACLE_AUTHTYPE { LOCAL, AUTH }
+    public class Oracle
     {
         public static string GetConnectionString()
         {
-            return $"Data Source={ServerName};Initial Catalog={DBName};Integrated Security=True;";
+            return $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}; Unicode = True";
         }
         public static string GetConnectionString(string _database)
         {
-            return $"Data Source={ServerName};Initial Catalog={_database};Integrated Security=True;";
+            return $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}; Unicode = True";
         }
         public static string DBNamePostfix
         {
-            get => KeyValDB.GetString("DABEBASE_POSTFIX");
-            set => KeyValDB.SetString("DABEBASE_POSTFIX", value);
+            get => KeyValDB.GetString("Oracle_DABEBASE_POSTFIX");
+            set => KeyValDB.SetString("Oracle_DABEBASE_POSTFIX", value);
         }
         public static string DBName
         {
-            get => KeyValDB.GetString("DATABASE_NAME" + DBNamePostfix);
-            set => KeyValDB.SetString("DATABASE_NAME" + DBNamePostfix, value);
+            get => KeyValDB.GetString("Oracle_DATABASE_NAME" + DBNamePostfix);
+            set => KeyValDB.SetString("Oracle_DATABASE_NAME" + DBNamePostfix, value);
         }
         public static string ServerName
         {
-            get => KeyValDB.GetString("S_SERVER_NAME");
-            set => KeyValDB.SetString("S_SERVER_NAME", value);
+            get => KeyValDB.GetString("Oracle_S_SERVER_NAME");
+            set => KeyValDB.SetString("Oracle_S_SERVER_NAME", value);
         }
         public static string Username
         {
-            get => KeyValDB.GetString("SERVER_USER_NAME");
-            set => KeyValDB.SetString("SERVER_USER_NAME", value);
+            get => KeyValDB.GetString("Oracle_SERVER_USER_NAME");
+            set => KeyValDB.SetString("Oracle_SERVER_USER_NAME", value);
         }
         public static string Password
         {
-            get => KeyValDB.GetString("SERVER_PASSWORD");
-            set => KeyValDB.SetString("SERVER_PASSWORD", value);
+            get => KeyValDB.GetString("Oracle_SERVER_PASSWORD");
+            set => KeyValDB.SetString("Oracle_SERVER_PASSWORD", value);
         }
         public static AUTHTYPE AUTH_TYPE { get; set; } = AUTHTYPE.LOCAL;
 
@@ -77,14 +79,11 @@ namespace CoffeDX.Database
                 MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
                 return @object(null);
             }
-            string connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=True;";
-            if (AUTH_TYPE == AUTHTYPE.LOCAL)
-                connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=True;";
-            else if (AUTH_TYPE == AUTHTYPE.AUTH)
-                connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=True;";
+            var connStr = $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}; Unicode = True";
+
             try
             {
-                using (SqlConnection connection = new SqlConnection(connStr))
+                using (var connection = new SqlConnection(connStr))
                 {
                     connection.Open();
                     var res = @object(connection);
@@ -163,11 +162,8 @@ namespace CoffeDX.Database
                 MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
                 return @object(conn);
             }
-            string connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=SSPI;Pooling=false;";
-            if (AUTH_TYPE == AUTHTYPE.LOCAL)
-                connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=SSPI;Pooling=false;";
-            else if (AUTH_TYPE == AUTHTYPE.AUTH)
-                connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=SSPI;Pooling=false; ";//Connection Lifetime=100;
+            var connStr = $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}; Unicode = True";
+
             try
             {
                 //if (conn == null || flag_check_connection == true)
@@ -228,18 +224,21 @@ namespace CoffeDX.Database
             {
                 if (tp.IsClass && tp.IsPublic && Attribute.IsDefined(tp, typeof(DEntityAttribute), false))
                 {
-                    string table = $"t_{tp.Name}";
+                    
+                    string table = $"t_{tp.Name}";//
                     if (allowDrop)
-                        tables.Append($"If Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}') Drop Table dbo.{table};\n");
+                        tables.Append($"BEGIN EXECUTE IMMEDIATE 'DROP TABLE {table}'; EXCEPTION WHEN OTHERS THEN NULL; END;\n");
 
-                    tables.Append($"If Not Exists(Select * From Information_Schema.Tables Where Table_Schema = 'dbo' And Table_Name = '{table}')\n");
+                    tables.Append($"BEGIN EXECUTE IMMEDIATE '\n");
                     tables.Append($"Create Table {table} (\n");
                     var props = tp.GetProperties();
+                    var pkKeys = new List<string>();
+
                     foreach (var prop in props)
                     {
                         string typeName = $"{prop.Name} {GetSQLServerFieldType(prop)}";
-                        if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute))) typeName += " Primary Key";
-                        if (Attribute.IsDefined(prop, typeof(DIncrementalAttribute))) typeName += " Identity(1,1) ";
+                        if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute))) pkKeys.Add(prop.Name);
+                        if (Attribute.IsDefined(prop, typeof(DIncrementalAttribute))) typeName += " GENERATED ALWAYS AS IDENTITY ";
 
                         else if (Attribute.IsDefined(prop, typeof(DForeignKeyAttribute)))
                         {
@@ -250,38 +249,32 @@ namespace CoffeDX.Database
 
                             if (parentKey == null || parentKey.Length == 0)
                                 parentKey = GetPrimaryKey(fAttr.ParentModel);
-                            // TODO create forieghn key with casecade on delete only, and non constrained field if value not found
                             var ctr_name = $"fk_{table}_TO_t_{fAttr.ParentModel.Name}";
-                            if (allowDrop)
-                            {
-                                dropRelations.Append($"IF EXISTS(SELECT * FROM Information_Schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_NAME = '{ctr_name}')\n");
-                                dropRelations.Append($"ALTER TABLE {table} DROP CONSTRAINT {ctr_name};\n");
-                            }
-                            fKeys.Append($"IF NOT EXISTS(SELECT * FROM Information_Schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_NAME = '{ctr_name}')\n");
-                            fKeys.Append($"ALTER TABLE dbo.{table} WITH NOCHECK ADD CONSTRAINT {ctr_name} FOREIGN KEY({prop.Name}) REFERENCES dbo.t_{fAttr.ParentModel.Name}({parentKey}) {on_constr_event};\n");
-                            // new DKeyValue(prop.Name, fAttr.ParentModel)
+                            if (allowDrop) dropRelations.Append($"BEGIN EXECUTE IMMEDIATE 'ALTER TABLE {table} DROP CONSTRAINT {ctr_name}'; EXCEPTION WHEN OTHERS THEN NULL; END;\n");
+
+                            fKeys.Append($"BEGIN EXECUTE IMMEDIATE '");
+                            fKeys.Append($"ALTER TABLE {table} ADD CONSTRAINT {ctr_name} FOREIGN KEY({prop.Name}) REFERENCES t_{fAttr.ParentModel.Name}({parentKey}) {on_constr_event};");
+                            fKeys.Append("'; EXCEPTION WHEN OTHERS THEN NULL; END;\n");
                         }
-                        tables.Append($"{typeName},\n");
+                        tables.Append($"{typeName}");
+                        if (prop != props[props.Length - 1]) tables.Append(",\n");
                     }
-                    tables.Append(" ); \n");
+                    /* Add PK Relations */
+                    if(pkKeys.Count > 0) tables.AppendLine($",\nCONSTRAINT pk_{table} PRIMARY KEY ({string.Join(",", pkKeys)})\n");
+                    /* /Add PK Relations */
+                    tables.Append(" );' \n");
 
                     if (Attribute.IsDefined(tp, typeof(DNonClusteredIndexAttribute), false))
                     {
-                        var ix = tp.GetCustomAttribute<DNonClusteredIndexAttribute>();
-                        var includes = ix.includes != null && ix.includes.Length > 0 ? "INCLUDE(" + string.Join(",", ix.includes) + ")" : "";
-                        //create nonclustered index [IX_t_Journal_analytic_id] on t_Journal
-                        var ix_name = $"IX_{table}";
-                        var cix_scrpt = $"CREATE NONCLUSTERED INDEX {ix_name} ON {table}({string.Join(",", ix.fields)}) {includes}";
-                        indexes.Append($"IF NOT EXISTS(SELECT * FROM sys.indexes WHERE name='{ix_name}')\n");
-                        indexes.Append(cix_scrpt + ";");
-                        indexes.Append($"ELSE {cix_scrpt} WITH (DROP_EXISTING = ON);\n");
+                        var ix = tp.GetCustomAttribute<DNonClusteredIndexAttribute>();                      
+                        indexes.Append($"\nBEGIN EXECUTE IMMEDIATE 'CREATE INDEX IX_{table} ON {table}({string.Join(",", ix.fields)});'; EXCEPTION WHEN OTHERS THEN NULL; END;");
                     }
                 }
             }
             /* /Generate Scripts */
             try
             {
-                using (var connection = new SqlConnection(GetConnectionString()))
+                using (var connection = new OracleConnection(GetConnectionString()))
                 {
 
                     connection.Open();
@@ -289,7 +282,7 @@ namespace CoffeDX.Database
                     var strKeys = fKeys?.ToString();
                     var Indx = indexes?.ToString();
                     /* 1: Drop The Old Relations*/
-                    var cmd = new SqlCommand(dropRelations.ToString(), connection);
+                    var cmd = new OracleCommand(dropRelations.ToString(), connection);
                     cmd.CommandTimeout = 240;
                     if (dropRelations.Length > 10) cmd.ExecuteNonQuery();
                     /* 2: Alter tables*/
@@ -330,49 +323,49 @@ namespace CoffeDX.Database
         {
             var tp = prop.PropertyType;
 
-            if (tp == typeof(long)) return "BIGINT";
-            if (tp == typeof(byte[])) return "Image";
-            if (tp == typeof(bool)) return "BIT";
-            if (tp == typeof(string)) return "Varchar(MAX) NULL";
+            if (tp == typeof(long)) return "LONG";
+            if (tp == typeof(byte[])) return "BLOB";
+            if (tp == typeof(bool)) return "CHAR(1)";
+            if (tp == typeof(string)) return "Varchar(255) NULL";
             if (tp == typeof(char)) return "Char";
             if (tp == typeof(int)) return "Int";
 
             if (tp == typeof(DateTime))
             {
-                if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIME(7)";
+                if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIMESTAMP";
                 return "Date";
             }
             if (tp == typeof(DateTimeOffset))
             {
-                if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIME(7)";
+                if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIMESTAMP";
                 return "DateTimeOffset";
             }
-            if (tp == typeof(TimeSpan)) return "TIME(7)";
+            if (tp == typeof(TimeSpan)) return "TIMESTAMP";
             if (tp == typeof(double)) return "Float default 0";
             if (tp == typeof(float)) return "Float default 0";
             if (tp == typeof(decimal)) return "Float default 0";
 
-            if (tp == typeof(long?)) return "BIGINT NULL";
-            if (tp == typeof(byte?[])) return "Image NULL";
+            if (tp == typeof(long?)) return "LONG NULL";
+            if (tp == typeof(byte?[])) return "BLOB NULL";
             if (tp == typeof(bool?)) return "BIT NULL";
-            if (tp == typeof(char?)) return "Char NULL";
+            if (tp == typeof(char?)) return "CHAR(1) NULL";
             if (tp == typeof(int?)) return "Int NULL";
             if (tp == typeof(DateTime?))
             {
-                if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIME(7) NULL";
+                if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIMESTAMP NULL";
                 return "Date NULL";
             }
             if (tp == typeof(DateTimeOffset?))
             {
-                if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIME(7) NULL";
-                return "DateTimeOffset NULL";
+                if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIMESTAMP NULL";
+                return "TIMESTAMP NULL";
             }
-            if (tp == typeof(TimeSpan?)) return "TIME(7) NULL";
+            if (tp == typeof(TimeSpan?)) return "TIMESTAMP NULL";
             if (tp == typeof(double?)) return "Float NULL default 0";
             if (tp == typeof(float?)) return "Float NULL default 0";
             if (tp == typeof(decimal?)) return "Float NULL default 0";
 
-            return "Varchar(20)";
+            return "Varchar2(20)";
         }
     }
 }

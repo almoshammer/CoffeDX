@@ -1,7 +1,5 @@
 ﻿using CoffeDX.Database;
 using CoffeDX.Query.Mapping;
-using CoffeDX.Shared;
-using Microsoft.SqlServer.Management.Smo;
 using System;
 using System.Collections;
 using System.Collections.Generic;
