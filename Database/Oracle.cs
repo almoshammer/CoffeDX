@@ -19,11 +19,11 @@ namespace CoffeDX.Database
     {
         public static string GetConnectionString()
         {
-            return $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}; Unicode = True";
+            return $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}";
         }
         public static string GetConnectionString(string _database)
         {
-            return $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}; Unicode = True";
+            return $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}";
         }
         public static string DBNamePostfix
         {
@@ -79,7 +79,7 @@ namespace CoffeDX.Database
                 MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
                 return @object(null);
             }
-            var connStr = $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}; Unicode = True";
+            var connStr = $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}";
 
             try
             {
@@ -162,7 +162,7 @@ namespace CoffeDX.Database
                 MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
                 return @object(conn);
             }
-            var connStr = $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}; Unicode = True";
+            var connStr = $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}";
 
             try
             {

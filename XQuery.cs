@@ -1,5 +1,6 @@
 ﻿using CoffeDX.Database;
 using CoffeDX.Query.Mapping;
+using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -49,12 +50,12 @@ namespace CoffeDX
         }
         public static DataTable ExecTable(string _query)
         {
-            return SQLServer.getOnlineConnection(conn =>
+            return CoffeDX.Database.Oracle.getOnlineConnection(conn =>
             {
                 DataTable result = new DataTable();
                 try
                 {
-                    var command = new SqlCommand(_query, (SqlConnection)conn);
+                    var command = new OracleCommand(_query, (OracleConnection)conn);
                     result.Load(command.ExecuteReader());
                 }
                 catch (Exception ex)
@@ -66,12 +67,12 @@ namespace CoffeDX
         }
         public static int ExecNon(string _query, string dbname = null)
         {
-            return SQLServer.getOnlineConnection(conn =>
+            return CoffeDX.Database.Oracle.getOnlineConnection(conn =>
             {
 
                 try
                 {
-                    var command = new SqlCommand(_query, (SqlConnection)conn);
+                    var command = new OracleCommand(_query, (OracleConnection)conn);
                     command.CommandTimeout = 0;
                     return command.ExecuteNonQuery();
                 }
@@ -84,12 +85,12 @@ namespace CoffeDX
         }
         public static object ExecScalar(string _query, string dbname = null)
         {
-            return SQLServer.getOnlineConnection(conn =>
+            return CoffeDX.Database.Oracle.getOnlineConnection(conn =>
             {
 
                 try
                 {
-                    var command = new SqlCommand(_query, (SqlConnection)conn);
+                    var command = new OracleCommand(_query, (OracleConnection)conn);
                     return command.ExecuteScalar();
 
                 }
@@ -100,13 +101,13 @@ namespace CoffeDX
                 }
             }, dbname);
         }
-        public static void ExecReader(string _query, DVoid<SqlDataReader> reader, string dbname = null)
+        public static void ExecReader(string _query, DVoid<OracleDataReader> reader, string dbname = null)
         {
-            SQLServer.getOnlineConnection(conn =>
+            CoffeDX.Database.Oracle.getOnlineConnection(conn =>
            {
                try
                {
-                   var command = new SqlCommand(_query, (SqlConnection)conn);
+                   var command = new OracleCommand(_query, (OracleConnection)conn);
                    reader(command.ExecuteReader());
                }
                catch (Exception ex)
@@ -149,10 +150,10 @@ namespace CoffeDX
             try
             {
                 if (_select == null) _select = new SelectQuery(tableName);
-                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
-                    var command = new SqlCommand(_select.GetQuery(), connection);
+                    var command = new OracleCommand(_select.GetQuery(), connection);
                     table.Load(command.ExecuteReader());
                 }
             }
@@ -172,14 +173,14 @@ namespace CoffeDX
 
             try
             {
-                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
 
-                    var command = new SqlCommand(_update.GetQuery(_select.whereList.ToString()), connection);
+                    var command = new OracleCommand(_update.GetQuery(_select.whereList.ToString()), connection);
                     var lst = _update.GetParams();
                     for (int i = 0; i < lst.Count; i++)
-                        command.Parameters.AddWithValue(lst.GetKey(i).ToString(),
+                        command.Parameters.Add(lst.GetKey(i).ToString(),
                             lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
                     command.CommandTimeout = 120;
                     return command.ExecuteNonQuery();
@@ -200,12 +201,12 @@ namespace CoffeDX
 
             try
             {
-                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
-                    var command = new SqlCommand(_query, connection);
+                    var command = new OracleCommand(_query, connection);
                     var lst = _insert.GetParams();
-                    for (int i = 0; i < lst.Count; i++) command.Parameters.AddWithValue(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
+                    for (int i = 0; i < lst.Count; i++) command.Parameters.Add(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
 
                     if (_query.Contains("Inserted")) output = DConvert.ToInt(command.ExecuteScalar());
                     else output = command.ExecuteNonQuery();//Affected Rows
@@ -236,10 +237,10 @@ namespace CoffeDX
             }
             try
             {
-                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
-                    SqlBulkCopy sqlBulkCopy = new SqlBulkCopy(connection);
+                    var sqlBulkCopy = new OracleBulkCopy(connection);
                     sqlBulkCopy.DestinationTableName = table.TableName;
                     sqlBulkCopy.WriteToServer(table);
                     return table.Rows.Count;
@@ -289,10 +290,10 @@ namespace CoffeDX
 
             try
             {
-                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
-                    var sqlBulkCopy = new SqlBulkCopy(connection);
+                    var sqlBulkCopy = new OracleBulkCopy(connection);
                     sqlBulkCopy.DestinationTableName = table.TableName;
                     sqlBulkCopy.WriteToServer(table);
                     return 1;
@@ -314,12 +315,12 @@ namespace CoffeDX
 
             try
             {
-                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
-                    var command = new SqlCommand(_query, connection);
+                    var command = new OracleCommand(_query, connection);
                     command.CommandTimeout = 120;
-                    var affectedRows = new SqlCommand(_query, connection).ExecuteNonQuery();
+                    var affectedRows = new OracleCommand(_query, connection).ExecuteNonQuery();
                     return affectedRows;
                 }
             }
@@ -459,10 +460,10 @@ namespace CoffeDX
             var _query = _select.GetQuery();
             try
             {
-                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
-                    var command = new SqlCommand(_query, connection);
+                    var command = new OracleCommand(_query, connection);
                     return command.ExecuteScalar();
                 }
             }
@@ -480,10 +481,10 @@ namespace CoffeDX
 
             try
             {
-                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
-                    var command = new SqlCommand(_query, connection);
+                    var command = new OracleCommand(_query, connection);
                     table.Load(command.ExecuteReader());
                 }
             }
@@ -504,10 +505,10 @@ namespace CoffeDX
             var count = 0l;
             try
             {
-                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
-                    var command = new SqlCommand(_query, connection);
+                    var command = new OracleCommand(_query, connection);
                     count = DConvert.ToLong(command.ExecuteScalar());
                 }
             }
@@ -524,10 +525,10 @@ namespace CoffeDX
             object value = null;
             try
             {
-                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
-                    var command = new SqlCommand(_query, connection);
+                    var command = new OracleCommand(_query, connection);
                     value = command.ExecuteScalar();
                 }
             }
@@ -543,10 +544,10 @@ namespace CoffeDX
             var _query = _select.GetQueryValue(field);
             try
             {
-                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
-                    var command = new SqlCommand(_query, connection);
+                    var command = new OracleCommand(_query, connection);
                     return DConvert.ToDouble(command.ExecuteScalar());
                 }
             }
@@ -565,10 +566,10 @@ namespace CoffeDX
 
             try
             {
-                using (var connection = new SqlConnection(SQLServer.GetConnectionString()))
+                using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
-                    var command = new SqlCommand(_query, connection);
+                    var command = new OracleCommand(_query, connection);
                     table.Load(command.ExecuteReader());
                     if (table.Rows.Count == 0) return instance;
                     return DConvert.ToEntity<T>(table.Rows[0]);
@@ -628,11 +629,11 @@ namespace CoffeDX
             public string GetQueryFirst()
             {
                 if (this.fields.Count == 0) this.fields.Add("*");
-                return $"SELECT TOP 1 {string.Join(",", this.fields)} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
+                return $"SELECT {string.Join(",", this.fields)} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList} {(whereList.Length > 4?" AND":" WHERE")} ROWNUM=1";
             }
             public string GetQueryCount()
             {
-                return $"SELECT count(*) AS rows_count FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
+                return $"SELECT count(*) AS r_count FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
             }
             public string GetQueryValue(string field)
             {
