@@ -14,7 +14,6 @@
 Wait to continue...
 
 
-(https://travis-ci.org/joemccann/dillinger)
 
 ## License
 MIT
