@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Dynamic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -218,27 +219,49 @@ namespace CoffeDX.Database
 
             StringBuilder dropRelations = new StringBuilder();
             StringBuilder indexes = new StringBuilder();
+            StringBuilder sequences = new StringBuilder();
 
             /* Generate Scripts */
             foreach (var tp in assembly.GetTypes())
             {
                 if (tp.IsClass && tp.IsPublic && Attribute.IsDefined(tp, typeof(DEntityAttribute), false))
                 {
-                    
+
                     string table = $"t_{tp.Name}";//
                     if (allowDrop)
                         tables.Append($"BEGIN EXECUTE IMMEDIATE 'DROP TABLE {table}'; EXCEPTION WHEN OTHERS THEN NULL; END;\n");
 
                     tables.Append($"BEGIN EXECUTE IMMEDIATE '\n");
-                    tables.Append($"Create Table {table} (\n");
+                    tables.Append($"CREATE TABLE {table} (\n");
                     var props = tp.GetProperties();
+
                     var pkKeys = new List<string>();
 
                     foreach (var prop in props)
                     {
-                        string typeName = $"{prop.Name} {GetSQLServerFieldType(prop)}";
-                        if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute))) pkKeys.Add(prop.Name);
-                        if (Attribute.IsDefined(prop, typeof(DIncrementalAttribute))) typeName += " GENERATED ALWAYS AS IDENTITY ";
+                        string field = $"\"{prop.Name}\"";
+                        string typeName = $"{field} {GetSQLServerFieldType(prop)}";
+                        if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute))) pkKeys.Add(field);
+                        if (Attribute.IsDefined(prop, typeof(DIncrementalAttribute)))
+                        {
+                            /* Oracle Version 12c */
+                            //typeName += " GENERATED ALWAYS AS IDENTITY "; 
+                            /* /Oracle Version 12c */
+
+                            /* Oracle Version <=11g */
+                            if (allowDrop) sequences.AppendLine($"BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE seq_{table}_{prop.Name};' EXCEPTION WHEN OTHERS THEN NULL; END;");
+                            sequences.AppendLine($"BEGIN EXECUTE IMMEDIATE 'CREATE SEQUENCE seq_{table}_{prop.Name} START WITH 1;' EXCEPTION WHEN OTHERS THEN NULL; END;");
+                            sequences.AppendLine($@"
+                                                   CREATE OR REPLACE TRIGGER tgr_seq_{table}_{prop.Name}
+                                                   BEFORE INSERT ON {table} 
+                                                   FOR EACH ROW
+                                                   BEGIN
+                                                     SELECT seq_{table}_{prop.Name}.NEXTVAL
+                                                     INTO   :new.{field}
+                                                     FROM   dual;
+                                                   END;");
+                            /* /Oracle Version <=11g */
+                        }
 
                         else if (Attribute.IsDefined(prop, typeof(DForeignKeyAttribute)))
                         {
@@ -253,20 +276,21 @@ namespace CoffeDX.Database
                             if (allowDrop) dropRelations.Append($"BEGIN EXECUTE IMMEDIATE 'ALTER TABLE {table} DROP CONSTRAINT {ctr_name}'; EXCEPTION WHEN OTHERS THEN NULL; END;\n");
 
                             fKeys.Append($"BEGIN EXECUTE IMMEDIATE '");
-                            fKeys.Append($"ALTER TABLE {table} ADD CONSTRAINT {ctr_name} FOREIGN KEY({prop.Name}) REFERENCES t_{fAttr.ParentModel.Name}({parentKey}) {on_constr_event};");
+                            fKeys.Append($"ALTER TABLE {table} ADD CONSTRAINT {ctr_name} FOREIGN KEY({field}) REFERENCES t_{fAttr.ParentModel.Name}({parentKey}) {on_constr_event};");
                             fKeys.Append("'; EXCEPTION WHEN OTHERS THEN NULL; END;\n");
                         }
                         tables.Append($"{typeName}");
                         if (prop != props[props.Length - 1]) tables.Append(",\n");
                     }
                     /* Add PK Relations */
-                    if(pkKeys.Count > 0) tables.AppendLine($",\nCONSTRAINT pk_{table} PRIMARY KEY ({string.Join(",", pkKeys)})\n");
+                    if (pkKeys.Count > 0) tables.AppendLine($",\nCONSTRAINT pk_{table} PRIMARY KEY ({string.Join(",", pkKeys)})\n");
                     /* /Add PK Relations */
                     tables.Append(" );' \n");
 
                     if (Attribute.IsDefined(tp, typeof(DNonClusteredIndexAttribute), false))
                     {
-                        var ix = tp.GetCustomAttribute<DNonClusteredIndexAttribute>();                      
+                        var ix = tp.GetCustomAttribute<DNonClusteredIndexAttribute>();
+                        ix.fields = ix.fields.Select(item => $"\"{item}\"").ToArray();
                         indexes.Append($"\nBEGIN EXECUTE IMMEDIATE 'CREATE INDEX IX_{table} ON {table}({string.Join(",", ix.fields)});'; EXCEPTION WHEN OTHERS THEN NULL; END;");
                     }
                 }
@@ -310,13 +334,7 @@ namespace CoffeDX.Database
         }
         private static string GetPrimaryKey(Type type)
         {
-            foreach (var item in type.GetProperties())
-            {
-                if (Attribute.IsDefined(item, typeof(DPrimaryKeyAttribute)))
-                {
-                    return item.Name;
-                }
-            }
+            foreach (var item in type.GetProperties()) if (Attribute.IsDefined(item, typeof(DPrimaryKeyAttribute))) return $"\"{item.Name}\"";
             return null;
         }
         private static string GetSQLServerFieldType(PropertyInfo prop)
@@ -325,7 +343,7 @@ namespace CoffeDX.Database
 
             if (tp == typeof(long)) return "LONG";
             if (tp == typeof(byte[])) return "BLOB";
-            if (tp == typeof(bool)) return "CHAR(1)";
+            if (tp == typeof(bool)) return "NUMBER(1)";
             if (tp == typeof(string)) return "Varchar(255) NULL";
             if (tp == typeof(char)) return "Char";
             if (tp == typeof(int)) return "Int";
@@ -338,7 +356,7 @@ namespace CoffeDX.Database
             if (tp == typeof(DateTimeOffset))
             {
                 if (Attribute.IsDefined(prop, typeof(DTimeAttribute))) return "TIMESTAMP";
-                return "DateTimeOffset";
+                return "TIMESTAMP";
             }
             if (tp == typeof(TimeSpan)) return "TIMESTAMP";
             if (tp == typeof(double)) return "Float default 0";
@@ -348,7 +366,7 @@ namespace CoffeDX.Database
             if (tp == typeof(long?)) return "LONG NULL";
             if (tp == typeof(byte?[])) return "BLOB NULL";
             if (tp == typeof(bool?)) return "BIT NULL";
-            if (tp == typeof(char?)) return "CHAR(1) NULL";
+            if (tp == typeof(char?)) return "NUMBER(1) NULL";
             if (tp == typeof(int?)) return "Int NULL";
             if (tp == typeof(DateTime?))
             {
@@ -365,7 +383,7 @@ namespace CoffeDX.Database
             if (tp == typeof(float?)) return "Float NULL default 0";
             if (tp == typeof(decimal?)) return "Float NULL default 0";
 
-            return "Varchar2(20)";
+            return "Varchar2(255)";
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using CoffeDX.Database;
-using CoffeDX.Query.Mapping;
+﻿using CoffeDX.Query.Mapping;
 using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections;
@@ -455,7 +454,7 @@ namespace CoffeDX
         public object Max(string fieldName, object @default)
         {
             if (_select == null) _select = new SelectQuery(tableName);
-            _select.select($"IIF(MAX({fieldName}) IS NULL,0,MAX({fieldName}))");
+            _select.select($"NVL(MAX({fieldName}),0)");
 
             var _query = _select.GetQuery();
             try
@@ -629,7 +628,7 @@ namespace CoffeDX
             public string GetQueryFirst()
             {
                 if (this.fields.Count == 0) this.fields.Add("*");
-                return $"SELECT {string.Join(",", this.fields)} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList} {(whereList.Length > 4?" AND":" WHERE")} ROWNUM=1";
+                return $"SELECT {string.Join(",", this.fields)} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList} {(whereList.Length > 4 ? " AND" : " WHERE")} ROWNUM=1";
             }
             public string GetQueryCount()
             {
