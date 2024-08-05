@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -195,7 +196,7 @@ namespace CoffeDX
         {
             var _insert = new InsertQuery(model);
             if (!string.IsNullOrWhiteSpace(this.tableName)) _insert.table = this.tableName;
-            var output = -1;
+            long output = 0;
             var _query = _insert.GetQuery();
 
             try
@@ -205,9 +206,16 @@ namespace CoffeDX
                     connection.Open();
                     var command = new OracleCommand(_query, connection);
                     var lst = _insert.GetParams();
-                    for (int i = 0; i < lst.Count; i++) command.Parameters.Add(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
+                    command.BindByName = true;
 
-                    if (_query.Contains("Inserted")) output = DConvert.ToInt(command.ExecuteScalar());
+                    for (int i = 0; i < lst.Count; i++) command.Parameters.Add(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()]);
+
+                    if (_query.Contains("RETURNING"))
+                    {
+                        foreach (var item in _insert.outFileds) command.Parameters.Add(item, OracleDbType.Int64, ParameterDirection.Output);
+                        command.ExecuteNonQuery();
+                        output = DConvert.ToLong(command.Parameters[_insert.outFileds[0]].Value);
+                    }
                     else output = command.ExecuteNonQuery();//Affected Rows
                     return output;
                 }
@@ -215,7 +223,7 @@ namespace CoffeDX
             catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
-                return -1;
+                return output;
             }
         }
 
@@ -368,6 +376,16 @@ namespace CoffeDX
                     if (!string.IsNullOrWhiteSpace(prop.Name)) _table = "t_" + prop.Name;
                 }
             }
+            if (field1.Contains("."))
+            {
+                field1 = field1.Insert(field1.IndexOf(".") + 1, "\"");
+                field1 = field1.Insert(field1.Length, "\"");
+            }
+            if (field2.Contains("."))
+            {
+                field2 = field2.Insert(field2.IndexOf(".") + 1, "\"");
+                field2 = field2.Insert(field2.Length, "\"");
+            }
 
             //_select.tables.Add(_table);
             _select.innerJoinList.Append($" Join {_table} ON {field1}={field2}");
@@ -398,6 +416,16 @@ namespace CoffeDX
                     if (!string.IsNullOrWhiteSpace(prop.Name)) _table = "t_" + prop.Name;
                 }
             }
+            if (field1.Contains("."))
+            {
+                field1 = field1.Insert(field1.IndexOf(".") + 1, "\"");
+                field1 = field1.Insert(field1.Length, "\"");    
+            }
+            if (field2.Contains("."))
+            {
+                field2 = field2.Insert(field2.IndexOf(".") + 1, "\"");
+                field2 = field2.Insert(field2.Length, "\"");
+            }
 
             _select.leftJoinList.Append($" Left Join {_table} ON {field1}={field2}");
             return this;
@@ -410,19 +438,19 @@ namespace CoffeDX
 
             string vStr = "";
             if (value.GetType() == typeof(string)) vStr = $"'{value}'"; else vStr = $"{value}";
-            _select.whereList.Append($"{key}={vStr}");
+            _select.whereList.Append($"{(key.Contains(".") ? key : "\"" + key + "\"")}={vStr}");
             return this;
         }
         public IWhere Where(string query)
         {
-            if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
+            if (_select.whereList.Length == 0) _select.whereList.Append(" WHERE ");
             else if (_select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" And ");
             _select.whereList.Append(query);
             return this;
         }
         public IWhere Where(DgWhere wh)
         {
-            if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
+            if (_select.whereList.Length == 0) _select.whereList.Append(" WHERE ");
             else if (_select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" And ");
 
             _select.whereList.Append("(");
@@ -432,18 +460,18 @@ namespace CoffeDX
         }
         public IWhere OrWhere(string key, object value)
         {
-            if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
-            else if (_select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" Or ");
+            if (_select.whereList.Length == 0) _select.whereList.Append(" WHERE ");
+            else if (_select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" OR ");
 
             var vStr = "";
             if (value.GetType() == typeof(string)) vStr = $"'{value}'"; else vStr = $"{value}";
-            _select.whereList.Append($"{key}={vStr}");
+            _select.whereList.Append($"{(key.Contains(".") ? key : "\"" + key + "\"")}={vStr}");
             return this;
         }
         public IWhere OrWhere(DgWhere wh)
         {
-            if (_select.whereList.Length == 0) _select.whereList.Append(" Where ");
-            else if (_select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" Or ");
+            if (_select.whereList.Length == 0) _select.whereList.Append(" WHERE ");
+            else if (_select.whereList[_select.whereList.Length - 1] != '(') _select.whereList.Append(" OR ");
 
             _select.whereList.Append("(");
             wh(this);
@@ -454,7 +482,7 @@ namespace CoffeDX
         public object Max(string fieldName, object @default)
         {
             if (_select == null) _select = new SelectQuery(tableName);
-            _select.select($"NVL(MAX({fieldName}),0)");
+            _select.select($"NVL(MAX({tableName}.\"{fieldName}\"),0)");
 
             var _query = _select.GetQuery();
             try
@@ -493,7 +521,11 @@ namespace CoffeDX
             }
             finally
             {
-                if (table.Rows.Count == 0) table.Rows.Add();
+                if (table.Rows.Count == 0)
+                {
+                    foreach (DataColumn dc in table.Columns) dc.AllowDBNull = true;
+                    table.Rows.Add();
+                }
             }
 
             return table.Rows[0];
@@ -595,9 +627,7 @@ namespace CoffeDX
             public StringBuilder whereList = new StringBuilder();
 
             public List<string> _exclude = new List<string>();
-
             public List<string> orderByList = new List<string>();
-
 
             public SelectQuery(string table)
             {
@@ -612,12 +642,12 @@ namespace CoffeDX
             private List<string> fields = new List<string>();
             public SelectQuery select(params string[] fields)
             {
-                this.fields.AddRange(fields);
+                this.fields.AddRange(fields.Select(s => s.Contains(".") ? s : $"\"{s}\""));
                 return this;
             }
             public SelectQuery OrderBy(params string[] fields)
             {
-                orderByList.AddRange(fields);
+                orderByList.AddRange(fields.Select(s => s.Contains(".") ? s : $"\"{s}\""));
                 return this;
             }
             public string GetQuery()
@@ -636,7 +666,7 @@ namespace CoffeDX
             }
             public string GetQueryValue(string field)
             {
-                return $"SELECT {field} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
+                return $"SELECT \"{field}\" FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
             }
         }
         private class UpdateQuery
@@ -672,16 +702,16 @@ namespace CoffeDX
                         object value = item.GetValue(model);
                         if (Attribute.IsDefined(item, typeof(DPrimaryKeyAttribute)))
                         {
-                            pK = $"WHERE {item.Name}=@{item.Name}";
+                            pK = $"WHERE \"{item.Name}\"=:{item.Name}";
                         }
                         if (Attribute.IsDefined(item, typeof(DForeignKeyAttribute)))
                         {
                             var number = DConvert.ToLong(value, 0);
                             if (number <= 0) value = null;
                         }
-                        paramsList.Add($"@{item.Name}", value);
+                        paramsList.Add($":{item.Name}", value);
                         if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;
-                        fields.Add($"{item.Name}=@{item.Name}");
+                        fields.Add($"\"{item.Name}\"=:{item.Name}");
                     }
                 }
 
@@ -706,7 +736,7 @@ namespace CoffeDX
             private List<string> keys = new List<string>();
             private List<string> values = new List<string>();
 
-            private List<string> outFileds = new List<string>();
+            public List<string> outFileds = new List<string>();
             public object model { get; set; }
             private SortedList paramsList = new SortedList();
             //private string pK;
@@ -726,7 +756,7 @@ namespace CoffeDX
                     object value = item.GetValue(model);
                     if (Attribute.IsDefined(item, typeof(DIncrementalAttribute)))
                     {
-                        outFileds.Add("Inserted." + item.Name);
+                        outFileds.Add($"{item.Name}");
                         continue;
                     }
                     if (Attribute.IsDefined(item, typeof(DForeignKeyAttribute)))
@@ -735,9 +765,14 @@ namespace CoffeDX
                         if (number <= 0) value = null;
                     }
                     //if (fV == null || fV.ToString().Length == 0) continue;
-                    keys.Add($"{item.Name}");
-                    values.Add($"@{item.Name}");
-                    paramsList.Add($"@{item.Name}", value);
+                    keys.Add($"\"{item.Name}\"");
+                    values.Add($":{item.Name}");
+                    if (item.PropertyType == typeof(bool))
+                    {
+                        paramsList.Add($":{item.Name}", DConvert.ToInt(value));
+                        continue;
+                    }
+                    paramsList.Add($":{item.Name}", value);
                 }
             }
             public string GetQuery()
@@ -747,10 +782,10 @@ namespace CoffeDX
                 var _insterted = "";
                 if (outFileds.Count > 0)
                 {
-                    _insterted += $" OUTPUT {string.Join(",", outFileds)}";
+                    _insterted += $" RETURNING {string.Join(",", outFileds.Select(s => $"\"{s}\""))} INTO {string.Join(",", outFileds.Select(s => $":{s}"))}";
                 }
 
-                return $"INSERT INTO {this.table}({string.Join(",", this.keys)}) {_insterted} VALUES ({string.Join(",", this.values)})";
+                return $"INSERT INTO {this.table}({string.Join(",", this.keys)}) VALUES ({string.Join(",", this.values)}) {_insterted}";
             }
             public SortedList GetParams() => this.paramsList;
         }
@@ -778,10 +813,7 @@ namespace CoffeDX
                 }
                 foreach (PropertyInfo prop in model.GetType().GetProperties())
                 {
-                    if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute)))
-                    {
-                        pk = prop.Name + "=" + DConvert.ToSqlValue(prop.GetValue(model));
-                    }
+                    if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute))) pk = $"\"{prop.Name}\"=" + DConvert.ToSqlValue(prop.GetValue(model));
                 }
             }
             public string GetQuery(string whereList)
@@ -799,7 +831,7 @@ namespace CoffeDX
                         {
                             var fVal = item.GetValue(this.model);
                             if (fVal.GetType() == typeof(string)) fVal = $"'{fVal}'";
-                            whPrivate = $"WHERE {item.Name}={fVal}";
+                            whPrivate = $"WHERE \"{item.Name}\"={fVal}";
                         }
                     }
                 }

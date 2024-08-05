@@ -397,7 +397,7 @@ namespace CoffeDX.Database
         {
             var tp = prop.PropertyType;
 
-            if (tp == typeof(long)) return "NUMBER(19)";
+            if (tp == typeof(long)) return "NUMBER(18)";
             if (tp == typeof(byte[])) return "BLOB";
             if (tp == typeof(bool)) return "NUMBER(1)";
             if (tp == typeof(string)) return "Varchar(255) NULL";
@@ -419,7 +419,7 @@ namespace CoffeDX.Database
             if (tp == typeof(float)) return "Float default 0";
             if (tp == typeof(decimal)) return "Float default 0";
 
-            if (tp == typeof(long?)) return "NUMBER(19) NULL";
+            if (tp == typeof(long?)) return "NUMBER(18) NULL";
             if (tp == typeof(byte?[])) return "BLOB NULL";
             if (tp == typeof(bool?)) return "BIT NULL";
             if (tp == typeof(char?)) return "NUMBER(1) NULL";
@@ -440,6 +440,13 @@ namespace CoffeDX.Database
             if (tp == typeof(decimal?)) return "Float NULL";
 
             return "Varchar2(255)";
+            /*
+             * Int32 => Oracle:Number(2) .. Oracle:Number(9)
+             * Int64 => Oracle:Number(10) .. Oracle:Number(18)
+             * Double => Oracle:Number(x,0) .. Oracle:Number(x,15)
+             * Double => Oracle:Float
+             * Decimal => Oracle:Number or Number(38)
+             */
         }
         public static string CreateMD5(string input)
         {

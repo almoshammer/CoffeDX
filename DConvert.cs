@@ -141,7 +141,10 @@ namespace CoffeDX
             {
                 return true;
             }
-
+            if (st.ToString() == "0" || st.ToString() == "false")
+            {
+                return true;
+            }
             if (st.ToString().Length == 0)
             {
                 return false;
