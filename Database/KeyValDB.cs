@@ -76,7 +76,10 @@ namespace CoffeDX.Database
         }
         public static string GetString(string key)
         {
-            return Db.Select<string, string>("global", key).Value;
+            lock ("")
+            {
+                return Db.Select<string, string>("global", key).Value;
+            }
         }
         public static void SetLong(string key, long value)
         {

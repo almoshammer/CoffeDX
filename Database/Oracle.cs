@@ -2,7 +2,6 @@
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
 using Oracle.ManagedDataAccess.Client;
-using OracleInternal.Secure.Network;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -13,13 +12,17 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace CoffeDX.Database
 {
     public enum ORACLE_AUTHTYPE { LOCAL, AUTH }
     public class Oracle
     {
+        private static string _DBName;
+        private static string _ServerName;
+        private static string _Username;
+        private static string _Password;
+        private static string _DBNamePostfix;
         public static string GetConnectionString()
         {
             return $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}";
@@ -30,28 +33,28 @@ namespace CoffeDX.Database
         }
         public static string DBNamePostfix
         {
-            get => KeyValDB.GetString("Oracle_DABEBASE_POSTFIX");
-            set => KeyValDB.SetString("Oracle_DABEBASE_POSTFIX", value);
+            get => _DBNamePostfix;
+            set { _DBNamePostfix = value; }
         }
         public static string DBName
         {
-            get => KeyValDB.GetString("Oracle_DATABASE_NAME" + DBNamePostfix);
-            set => KeyValDB.SetString("Oracle_DATABASE_NAME" + DBNamePostfix, value);
+            get => _DBName;
+            set { _DBName = value; }
         }
         public static string ServerName
         {
-            get => KeyValDB.GetString("Oracle_S_SERVER_NAME");
-            set => KeyValDB.SetString("Oracle_S_SERVER_NAME", value);
+            get => _ServerName;
+            set { _ServerName = value; }
         }
         public static string Username
         {
-            get => KeyValDB.GetString("Oracle_SERVER_USER_NAME");
-            set => KeyValDB.SetString("Oracle_SERVER_USER_NAME", value);
+            get => _Username;
+            set { _Username = value; }
         }
         public static string Password
         {
-            get => KeyValDB.GetString("Oracle_SERVER_PASSWORD");
-            set => KeyValDB.SetString("Oracle_SERVER_PASSWORD", value);
+            get => _Password;
+            set { _Password = value; }
         }
         public static AUTHTYPE AUTH_TYPE { get; set; } = AUTHTYPE.LOCAL;
 
@@ -93,6 +96,7 @@ namespace CoffeDX.Database
         {
             return getOnlineConnection(conn =>
             {
+
                 try
                 {
                     ServerConnection sc = new ServerConnection((conn as SqlConnection));
