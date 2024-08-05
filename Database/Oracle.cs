@@ -57,7 +57,7 @@ namespace CoffeDX.Database
 
         public static bool flag_check_connection = true;
 
-        private static SqlConnection conn;
+        private static OracleConnection conn;
         public static void closeConnection()
         {
             if (conn != null && conn.State != ConnectionState.Closed)
@@ -75,7 +75,7 @@ namespace CoffeDX.Database
 
             try
             {
-                using (var connection = new SqlConnection(connStr))
+                using (var connection = new OracleConnection(connStr))
                 {
                     connection.Open();
                     var res = @object(connection);
@@ -160,7 +160,7 @@ namespace CoffeDX.Database
             {
                 //if (conn == null || flag_check_connection == true)
                 //{
-                //    conn = new SqlConnection(connStr);
+                //    conn = new OracleConnection(connStr);
                 //    conn.StateChange += (s, e) =>
                 //    {
                 //        if (e.CurrentState == ConnectionState.Broken)
@@ -179,7 +179,7 @@ namespace CoffeDX.Database
 
                 //var result = @object(conn);
                 ////dynamic result = Activator.CreateInstance<T>();
-                ////using (var cc = new SqlConnection(connStr))
+                ////using (var cc = new OracleConnection(connStr))
                 ////{
                 ////    cc.Open();
                 ////    result = @object(cc);
@@ -187,7 +187,7 @@ namespace CoffeDX.Database
                 //conn.Close();
 
                 dynamic result = new ExpandoObject();
-                using (var conn = new SqlConnection(connStr))
+                using (var conn = new OracleConnection(connStr))
                 {
                     await conn.OpenAsync();
                     result = @object(conn);
