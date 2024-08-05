@@ -156,7 +156,7 @@ namespace CoffeDX
                     table.Load(command.ExecuteReader());
                 }
             }
-            catch (SqlException e)
+            catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
             }
@@ -185,7 +185,7 @@ namespace CoffeDX
                     return command.ExecuteNonQuery();
                 }
             }
-            catch (SqlException e)
+            catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
                 return -1;
@@ -212,7 +212,7 @@ namespace CoffeDX
                     return output;
                 }
             }
-            catch (SqlException e)
+            catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
                 return -1;
@@ -245,7 +245,7 @@ namespace CoffeDX
                     return table.Rows.Count;
                 }
             }
-            catch (SqlException e)
+            catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
                 return 0;
@@ -298,7 +298,7 @@ namespace CoffeDX
                     return 1;
                 }
             }
-            catch (SqlException e)
+            catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
                 return 0;
@@ -323,7 +323,7 @@ namespace CoffeDX
                     return affectedRows;
                 }
             }
-            catch (SqlException e)
+            catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
                 return 0;
@@ -466,7 +466,7 @@ namespace CoffeDX
                     return command.ExecuteScalar();
                 }
             }
-            catch (SqlException e)
+            catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
                 return 0;
@@ -487,7 +487,7 @@ namespace CoffeDX
                     table.Load(command.ExecuteReader());
                 }
             }
-            catch (SqlException e)
+            catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
             }
@@ -511,7 +511,7 @@ namespace CoffeDX
                     count = DConvert.ToLong(command.ExecuteScalar());
                 }
             }
-            catch (SqlException e)
+            catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
                 return 0;
@@ -531,7 +531,7 @@ namespace CoffeDX
                     value = command.ExecuteScalar();
                 }
             }
-            catch (SqlException e)
+            catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
                 return 0;
@@ -550,7 +550,7 @@ namespace CoffeDX
                     return DConvert.ToDouble(command.ExecuteScalar());
                 }
             }
-            catch (SqlException e)
+            catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
                 return 0;
@@ -574,7 +574,7 @@ namespace CoffeDX
                     return DConvert.ToEntity<T>(table.Rows[0]);
                 }
             }
-            catch (SqlException e)
+            catch (OracleException e)
             {
                 System.Windows.Forms.MessageBox.Show(e.Message, "" + e.Number);
                 return instance;

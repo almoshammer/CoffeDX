@@ -2,6 +2,7 @@
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
 using Oracle.ManagedDataAccess.Client;
+using OracleInternal.Secure.Network;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -12,6 +13,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace CoffeDX.Database
 {
@@ -120,7 +122,7 @@ namespace CoffeDX.Database
                     else destination.SqlRestore(server);
                     return true;
                 }
-                catch (SqlException ex)
+                catch (OracleException ex)
                 {
                     MessageBox.Show(ex.Message);
                     return false;
@@ -146,7 +148,7 @@ namespace CoffeDX.Database
                     else destination.SqlBackup(server);
                     return true;
                 }
-                catch (SqlException ex)
+                catch (OracleException ex)
                 {
                     MessageBox.Show(ex.Message);
                     return false;
@@ -213,26 +215,33 @@ namespace CoffeDX.Database
         }
         public static void Migrate(Assembly assembly, bool allowDrop = false)
         {
-            StringBuilder tables = new StringBuilder();
-            StringBuilder fKeys = new StringBuilder();
-
-
-            StringBuilder dropRelations = new StringBuilder();
-            StringBuilder indexes = new StringBuilder();
-            StringBuilder sequences = new StringBuilder();
-
+            var tables = new StringBuilder();
+            var constraints = new StringBuilder();
+            var dropConstraints = new StringBuilder();
+            var indexes = new StringBuilder();
+            var sequences = new StringBuilder();
             /* Generate Scripts */
             foreach (var tp in assembly.GetTypes())
             {
                 if (tp.IsClass && tp.IsPublic && Attribute.IsDefined(tp, typeof(DEntityAttribute), false))
                 {
+                    if (tables.Length == 0)
+                    {
+                        tables.Append("DECLARE v_exist INT;");
+                        tables.Append("\nBEGIN");
+                    }
 
-                    string table = $"t_{tp.Name}";//
+                    string table = $"t_{tp.Name}".ToUpper();
+
                     if (allowDrop)
-                        tables.Append($"BEGIN EXECUTE IMMEDIATE 'DROP TABLE {table}'; EXCEPTION WHEN OTHERS THEN NULL; END;\n");
+                    {
+                        tables.Append($"\nSELECT COUNT(*) INTO v_exist FROM user_tables WHERE table_name = '{table}';");
+                        tables.Append($"\nIF v_exist > 0 THEN EXECUTE IMMEDIATE 'DROP TABLE {table}'; END IF;");
+                    }
 
-                    tables.Append($"BEGIN EXECUTE IMMEDIATE '\n");
-                    tables.Append($"CREATE TABLE {table} (\n");
+                    tables.Append($"\nSELECT COUNT(*) INTO v_exist FROM user_tables WHERE table_name = '{table}';");
+                    tables.Append($"\nIF v_exist = 0 THEN EXECUTE IMMEDIATE 'CREATE TABLE {table} ( ");
+
                     var props = tp.GetProperties();
 
                     var pkKeys = new List<string>();
@@ -244,86 +253,133 @@ namespace CoffeDX.Database
                         if (Attribute.IsDefined(prop, typeof(DPrimaryKeyAttribute))) pkKeys.Add(field);
                         if (Attribute.IsDefined(prop, typeof(DIncrementalAttribute)))
                         {
+                            if (sequences.Length == 0)
+                            {
+                                sequences.Append("DECLARE v_exist INT;");
+                                sequences.Append("\nBEGIN");
+                            }
+                            var seq_name = "SEQ_" + CreateMD5($"seq_{table}_{prop.Name}".ToUpper()).Substring(0, 20);
+                            var tgr_name = "TGR_" + CreateMD5($"tgr_seq_{table}_{prop.Name}".ToUpper()).Substring(0, 20);
                             /* Oracle Version 12c */
                             //typeName += " GENERATED ALWAYS AS IDENTITY "; 
                             /* /Oracle Version 12c */
 
                             /* Oracle Version <=11g */
-                            if (allowDrop) sequences.AppendLine($"BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE seq_{table}_{prop.Name};' EXCEPTION WHEN OTHERS THEN NULL; END;");
-                            sequences.AppendLine($"BEGIN EXECUTE IMMEDIATE 'CREATE SEQUENCE seq_{table}_{prop.Name} START WITH 1;' EXCEPTION WHEN OTHERS THEN NULL; END;");
-                            sequences.AppendLine($@"
-                                                   CREATE OR REPLACE TRIGGER tgr_seq_{table}_{prop.Name}
-                                                   BEFORE INSERT ON {table} 
-                                                   FOR EACH ROW
-                                                   BEGIN
-                                                     SELECT seq_{table}_{prop.Name}.NEXTVAL
-                                                     INTO   :new.{field}
-                                                     FROM   dual;
-                                                   END;");
+                            if (allowDrop)
+                            {
+                                sequences.Append($"\nSELECT COUNT(*) INTO v_exist FROM user_sequences WHERE sequence_name = '{seq_name}';");
+                                sequences.Append($"\nIF v_exist > 0 THEN EXECUTE IMMEDIATE 'DROP SEQUENCE {seq_name}'; END IF;");
+                            }
+                            sequences.Append($"\nSELECT COUNT(*) INTO v_exist FROM user_sequences WHERE sequence_name = '{seq_name}';");
+                            sequences.Append($"\nIF v_exist = 0 THEN EXECUTE IMMEDIATE 'CREATE SEQUENCE {seq_name} START WITH 1'; END IF;");
+                            sequences.Append($"\nEXECUTE IMMEDIATE 'CREATE OR REPLACE TRIGGER {tgr_name} BEFORE INSERT ON {table} FOR EACH ROW BEGIN SELECT {seq_name}.NEXTVAL INTO ' || ':' || 'new.{field} FROM dual; END' || ';';");
                             /* /Oracle Version <=11g */
                         }
-
                         else if (Attribute.IsDefined(prop, typeof(DForeignKeyAttribute)))
                         {
+                            if (constraints.Length == 0)
+                            {
+                                constraints.Append("DECLARE v_exist INT;");
+                                constraints.Append("\nBEGIN");
+                                dropConstraints.Append("DECLARE v_exist INT;");
+                                dropConstraints.Append("\nBEGIN");
+                            }
                             var fAttr = prop.GetCustomAttribute<DForeignKeyAttribute>();
                             var parentKey = fAttr.ParentKey;
 
+                            if (parentKey == null || parentKey.Length == 0) parentKey = GetPrimaryKey(fAttr.ParentModel);
+
+                            var ctr_name = "FK_" + CreateMD5($"{table}_TO_t_{fAttr.ParentModel.Name}".ToUpper()).Substring(0, 20);
                             var on_constr_event = fAttr.constraint_event == ON_CONSTRAINT_EVENT.CASCADE ? "ON DELETE CASCADE" : "";
+                            if (allowDrop)
+                            {
+                                dropConstraints.Append($"\nSELECT COUNT(*) INTO v_exist FROM user_constraints WHERE constraint_name = '{ctr_name}';");
+                                dropConstraints.Append($"\nIF v_exist > 0 THEN EXECUTE IMMEDIATE 'ALTER TABLE {table} DROP CONSTRAINT {ctr_name}'; END IF;");
+                            }
 
-                            if (parentKey == null || parentKey.Length == 0)
-                                parentKey = GetPrimaryKey(fAttr.ParentModel);
-                            var ctr_name = $"fk_{table}_TO_t_{fAttr.ParentModel.Name}";
-                            if (allowDrop) dropRelations.Append($"BEGIN EXECUTE IMMEDIATE 'ALTER TABLE {table} DROP CONSTRAINT {ctr_name}'; EXCEPTION WHEN OTHERS THEN NULL; END;\n");
-
-                            fKeys.Append($"BEGIN EXECUTE IMMEDIATE '");
-                            fKeys.Append($"ALTER TABLE {table} ADD CONSTRAINT {ctr_name} FOREIGN KEY({field}) REFERENCES t_{fAttr.ParentModel.Name}({parentKey}) {on_constr_event};");
-                            fKeys.Append("'; EXCEPTION WHEN OTHERS THEN NULL; END;\n");
+                            constraints.Append($"\nSELECT COUNT(*) INTO v_exist FROM user_constraints WHERE constraint_name = '{ctr_name}';");
+                            constraints.Append($"\nIF v_exist = 0 THEN EXECUTE IMMEDIATE 'ALTER TABLE {table} ADD CONSTRAINT {ctr_name} FOREIGN KEY({field}) REFERENCES t_{fAttr.ParentModel.Name}(\"{parentKey}\") {on_constr_event}'; END IF;");
                         }
                         tables.Append($"{typeName}");
-                        if (prop != props[props.Length - 1]) tables.Append(",\n");
+                        if (prop != props[props.Length - 1]) tables.Append(", ");
                     }
                     /* Add PK Relations */
-                    if (pkKeys.Count > 0) tables.AppendLine($",\nCONSTRAINT pk_{table} PRIMARY KEY ({string.Join(",", pkKeys)})\n");
+                    if (pkKeys.Count > 0) tables.AppendLine($", CONSTRAINT pk_{table} PRIMARY KEY ({string.Join(",", pkKeys)}) ");
                     /* /Add PK Relations */
-                    tables.Append(" );' \n");
+
+                    tables.Append(" )'; END IF; \n");
 
                     if (Attribute.IsDefined(tp, typeof(DNonClusteredIndexAttribute), false))
                     {
+                        if (indexes.Length == 0)
+                        {
+                            indexes.Append("DECLARE v_exist INT;");
+                            indexes.Append("\nBEGIN");
+                        }
+
                         var ix = tp.GetCustomAttribute<DNonClusteredIndexAttribute>();
                         ix.fields = ix.fields.Select(item => $"\"{item}\"").ToArray();
-                        indexes.Append($"\nBEGIN EXECUTE IMMEDIATE 'CREATE INDEX IX_{table} ON {table}({string.Join(",", ix.fields)});'; EXCEPTION WHEN OTHERS THEN NULL; END;");
+                        var ix_name = $"IX_{table}";
+                        if (allowDrop)
+                        {
+                            indexes.Append($"\nSELECT COUNT(*) INTO v_exist FROM user_indexes WHERE index_name = '{ix_name}';");
+                            indexes.Append($"\nIF v_exist > 0 THEN EXECUTE IMMEDIATE 'DROP INDEX {ix_name}'; END IF;");
+                        }
+                        indexes.Append($"\nSELECT COUNT(*) INTO v_exist FROM user_indexes WHERE index_name = '{ix_name}';");
+                        indexes.Append($"\nIF v_exist = 0 THEN EXECUTE IMMEDIATE 'CREATE INDEX {ix_name} ON {table}({string.Join(",", ix.fields)})'; END IF;");
                     }
                 }
             }
+            if (constraints.Length > 0) constraints.Append("\nEND;");
+            if (tables.Length > 0) tables.Append("\nEND;");
+            if (sequences.Length > 0) sequences.Append("\nEND;");
+            if (dropConstraints.Length > 0) dropConstraints.Append("\nEND;");
+            if (indexes.Length > 0) indexes.Append("\nEND;");
             /* /Generate Scripts */
+
             try
             {
                 using (var connection = new OracleConnection(GetConnectionString()))
                 {
 
                     connection.Open();
-                    var strTables = tables?.ToString();
-                    var strKeys = fKeys?.ToString();
-                    var Indx = indexes?.ToString();
-                    /* 1: Drop The Old Relations*/
-                    var cmd = new OracleCommand(dropRelations.ToString(), connection);
+
+                    /* Drop The Old Constraints*/
+                    var cmd = new OracleCommand(dropConstraints.ToString(), connection);
                     cmd.CommandTimeout = 240;
-                    if (dropRelations.Length > 10) cmd.ExecuteNonQuery();
-                    /* 2: Alter tables*/
-                    cmd.CommandText = strTables;
-                    cmd.ExecuteNonQuery();
-                    /* 3: Add The New Relations*/
-                    if (strKeys != null && strKeys.Length > 10 && strKeys.ToLower().Contains("alter"))
+                    if (dropConstraints.Length > 10) cmd.ExecuteNonQuery();
+                    /* /Drop The Old Constraints */
+
+                    /* Alter tables */
+                    if (tables.Length > 10)
                     {
-                        cmd.CommandText = strKeys;
+                        cmd.CommandText = tables.ToString();
                         cmd.ExecuteNonQuery();
                     }
-                    /* 4: Add New Indexes*/
-                    if (Indx != null && Indx.Length > 10)// Length(10): To insure that there're no white spaces
+                    /* Alter tables */
+
+                    /* Add The New Constraints */
+                    if (constraints.Length > 10)
                     {
-                        cmd.CommandText = Indx;
+                        cmd.CommandText = constraints.ToString();
                         cmd.ExecuteNonQuery();
                     }
+                    /* /Add The New Constraints */
+
+                    /* Add Sequences */
+                    if (sequences != null && sequences.Length > 10)
+                    {
+                        cmd.CommandText = sequences.ToString();
+                        cmd.ExecuteNonQuery();
+                    }
+                    /* /Add Sequences */
+                    /* Add New Indexes */
+                    if (indexes.Length > 10) // Length(10): To insure that there're no white spaces
+                    {
+                        cmd.CommandText = indexes.ToString();
+                        cmd.ExecuteNonQuery();
+                    }
+                    /* /Add New Indexes */
                 }
             }
             catch (Exception ex)
@@ -334,14 +390,14 @@ namespace CoffeDX.Database
         }
         private static string GetPrimaryKey(Type type)
         {
-            foreach (var item in type.GetProperties()) if (Attribute.IsDefined(item, typeof(DPrimaryKeyAttribute))) return $"\"{item.Name}\"";
+            foreach (var item in type.GetProperties()) if (Attribute.IsDefined(item, typeof(DPrimaryKeyAttribute))) return item.Name;
             return null;
         }
         private static string GetSQLServerFieldType(PropertyInfo prop)
         {
             var tp = prop.PropertyType;
 
-            if (tp == typeof(long)) return "LONG";
+            if (tp == typeof(long)) return "NUMBER(19)";
             if (tp == typeof(byte[])) return "BLOB";
             if (tp == typeof(bool)) return "NUMBER(1)";
             if (tp == typeof(string)) return "Varchar(255) NULL";
@@ -363,7 +419,7 @@ namespace CoffeDX.Database
             if (tp == typeof(float)) return "Float default 0";
             if (tp == typeof(decimal)) return "Float default 0";
 
-            if (tp == typeof(long?)) return "LONG NULL";
+            if (tp == typeof(long?)) return "NUMBER(19) NULL";
             if (tp == typeof(byte?[])) return "BLOB NULL";
             if (tp == typeof(bool?)) return "BIT NULL";
             if (tp == typeof(char?)) return "NUMBER(1) NULL";
@@ -379,11 +435,27 @@ namespace CoffeDX.Database
                 return "TIMESTAMP NULL";
             }
             if (tp == typeof(TimeSpan?)) return "TIMESTAMP NULL";
-            if (tp == typeof(double?)) return "Float NULL default 0";
-            if (tp == typeof(float?)) return "Float NULL default 0";
-            if (tp == typeof(decimal?)) return "Float NULL default 0";
+            if (tp == typeof(double?)) return "Float NULL";
+            if (tp == typeof(float?)) return "Float NULL";
+            if (tp == typeof(decimal?)) return "Float NULL";
 
             return "Varchar2(255)";
+        }
+        public static string CreateMD5(string input)
+        {
+            // Use input string to calculate MD5 hash
+            using (var md5 = System.Security.Cryptography.MD5.Create())
+            {
+                var inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+                var hashBytes = md5.ComputeHash(inputBytes);
+
+                //return Convert.ToHexString(hashBytes); // .NET 5 +
+
+                //Convert the byte array to hexadecimal string prior to.NET 5
+                var sb = new System.Text.StringBuilder();
+                for (int i = 0; i < hashBytes.Length; i++) sb.Append(hashBytes[i].ToString("X2"));
+                return sb.ToString();
+            }
         }
     }
 }
