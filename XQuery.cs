@@ -65,7 +65,7 @@ namespace CoffeDX
                 return result;
             });
         }
-        public static int ExecNon(string _query, string dbname = null)
+        public static int ExecNon(string _query)
         {
             return CoffeDX.Database.Oracle.getOnlineConnection(conn =>
             {
@@ -81,9 +81,9 @@ namespace CoffeDX
                     System.Windows.Forms.MessageBox.Show(ex.Message);
                 }
                 return 0;
-            }, dbname);
+            });
         }
-        public static object ExecScalar(string _query, string dbname = null)
+        public static object ExecScalar(string _query)
         {
             return CoffeDX.Database.Oracle.getOnlineConnection(conn =>
             {
@@ -99,9 +99,9 @@ namespace CoffeDX
                     System.Windows.Forms.MessageBox.Show(ex.Message);
                     return null;
                 }
-            }, dbname);
+            });
         }
-        public static void ExecReader(string _query, DVoid<OracleDataReader> reader, string dbname = null)
+        public static void ExecReader(string _query, DVoid<OracleDataReader> reader)
         {
             CoffeDX.Database.Oracle.getOnlineConnection(conn =>
            {
@@ -115,7 +115,7 @@ namespace CoffeDX
                    System.Windows.Forms.MessageBox.Show(ex.Message);
                }
                return "";
-           }, dbname);
+           });
         }
         public ISelect Select(params string[] fields)
         {
@@ -176,12 +176,12 @@ namespace CoffeDX
                 using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
-
                     var command = new OracleCommand(_update.GetQuery(_select.whereList.ToString()), connection);
+                    command.BindByName = true;
+
                     var lst = _update.GetParams();
                     for (int i = 0; i < lst.Count; i++)
-                        command.Parameters.Add(lst.GetKey(i).ToString(),
-                            lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
+                        command.Parameters.Add(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
                     command.CommandTimeout = 120;
                     return command.ExecuteNonQuery();
                 }
@@ -376,16 +376,16 @@ namespace CoffeDX
                     if (!string.IsNullOrWhiteSpace(prop.Name)) _table = "t_" + prop.Name;
                 }
             }
-            if (field1.Contains("."))
-            {
-                field1 = field1.Insert(field1.IndexOf(".") + 1, "\"");
-                field1 = field1.Insert(field1.Length, "\"");
-            }
-            if (field2.Contains("."))
-            {
-                field2 = field2.Insert(field2.IndexOf(".") + 1, "\"");
-                field2 = field2.Insert(field2.Length, "\"");
-            }
+            //if (field1.Contains("."))
+            //{
+            //    field1 = field1.Insert(field1.IndexOf(".") + 1, "\"");
+            //    field1 = field1.Insert(field1.Length, "\"");
+            //}
+            //if (field2.Contains("."))
+            //{
+            //    field2 = field2.Insert(field2.IndexOf(".") + 1, "\"");
+            //    field2 = field2.Insert(field2.Length, "\"");
+            //}
 
             //_select.tables.Add(_table);
             _select.innerJoinList.Append($" Join {_table} ON {field1}={field2}");
@@ -416,17 +416,16 @@ namespace CoffeDX
                     if (!string.IsNullOrWhiteSpace(prop.Name)) _table = "t_" + prop.Name;
                 }
             }
-            if (field1.Contains("."))
-            {
-                field1 = field1.Insert(field1.IndexOf(".") + 1, "\"");
-                field1 = field1.Insert(field1.Length, "\"");    
-            }
-            if (field2.Contains("."))
-            {
-                field2 = field2.Insert(field2.IndexOf(".") + 1, "\"");
-                field2 = field2.Insert(field2.Length, "\"");
-            }
-
+            //if (field1.Contains("."))
+            //{
+            //    field1 = field1.Insert(field1.IndexOf(".") + 1, "\"");
+            //    field1 = field1.Insert(field1.Length, "\"");    
+            //}
+            //if (field2.Contains(".") && !field2.ToLower().Contains("and") && !field2.ToLower().Contains("or"))
+            //{
+            //    field2 = field2.Insert(field2.IndexOf(".") + 1, "\"");
+            //    field2 = field2.Insert(field2.Length, "\"");
+            //}
             _select.leftJoinList.Append($" Left Join {_table} ON {field1}={field2}");
             return this;
         }
@@ -642,12 +641,12 @@ namespace CoffeDX
             private List<string> fields = new List<string>();
             public SelectQuery select(params string[] fields)
             {
-                this.fields.AddRange(fields.Select(s => s.Contains(".") ? s : $"\"{s}\""));
+                this.fields.AddRange(fields.Select(s => (s.Contains(".") || s.Contains(" ")) ? s : $"\"{s}\""));
                 return this;
             }
             public SelectQuery OrderBy(params string[] fields)
             {
-                orderByList.AddRange(fields.Select(s => s.Contains(".") ? s : $"\"{s}\""));
+                orderByList.AddRange(fields.Select(s => (s.Contains(".") || s.Contains(" ")) ? s : $"\"{s}\""));
                 return this;
             }
             public string GetQuery()
@@ -708,6 +707,14 @@ namespace CoffeDX
                         {
                             var number = DConvert.ToLong(value, 0);
                             if (number <= 0) value = null;
+                        }
+
+                        if (item.PropertyType == typeof(bool))
+                        {
+                            paramsList.Add($":{item.Name}", DConvert.ToInt(value));
+                            if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;
+                            fields.Add($"\"{item.Name}\"=:{item.Name}");
+                            continue;
                         }
                         paramsList.Add($":{item.Name}", value);
                         if (Attribute.IsDefined(item, typeof(DIncrementalAttribute))) continue;

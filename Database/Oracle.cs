@@ -68,20 +68,9 @@ namespace CoffeDX.Database
 
             return getConnection(@object, DBName);
         }
+
         public static T getOnlineConnection<T>(DObject<T> @object)
         {
-            return getOnlineConnection(@object, DBName);
-        }
-        public static T getOnlineConnection<T>(DObject<T> @object, string DatabaseName)
-        {
-            var dbname = DBName;
-            if (!string.IsNullOrWhiteSpace(DatabaseName)) dbname = DatabaseName;
-
-            if (string.IsNullOrWhiteSpace(dbname))
-            {
-                MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
-                return @object(null);
-            }
             var connStr = $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}";
 
             try
@@ -127,7 +116,7 @@ namespace CoffeDX.Database
                     MessageBox.Show(ex.Message);
                     return false;
                 }
-            }, _databaseName);
+            });
         }
         public static bool BackupDB(string _databaseName, string path, DVoid action, bool isAsync = false)
         {
@@ -153,7 +142,7 @@ namespace CoffeDX.Database
                     MessageBox.Show(ex.Message);
                     return false;
                 }
-            }, _databaseName);
+            });
         }
         public async static Task<T> getConnection<T>(DObject<T> @object, string DatabaseName)
         {
