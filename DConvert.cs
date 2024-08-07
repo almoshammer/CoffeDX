@@ -56,11 +56,8 @@ namespace CoffeDX
         }
         public static void SetColumnsNull(DataTable dataList)
         {
-            if (dataList != null || dataList.Columns.Count == 0) return;
-            for (int i = 0; i < dataList.Columns.Count; i++)
-            {
-                dataList.Columns[i].AllowDBNull = true;
-            }
+            if (dataList == null || dataList.Columns.Count == 0) return;
+            for (int i = 0; i < dataList.Columns.Count; i++) dataList.Columns[i].AllowDBNull = true;
         }
         public static int ToInt(object value, int defaultValue = 0)
         {
