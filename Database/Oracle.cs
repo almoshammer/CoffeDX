@@ -334,13 +334,11 @@ namespace CoffeDX.Database
             {
                 using (var connection = new OracleConnection(GetConnectionString()))
                 {
-
                     connection.Open();
-
                     /* Drop The Old Constraints*/
                     var cmd = new OracleCommand(dropConstraints.ToString(), connection);
                     cmd.CommandTimeout = 240;
-                    if (dropConstraints.Length > 10) cmd.ExecuteNonQuery();
+                    if (dropConstraints.Length > 10 && dropConstraints.ToString().ToLower().Contains("DROP")) cmd.ExecuteNonQuery();
                     /* /Drop The Old Constraints */
 
                     /* Alter tables */

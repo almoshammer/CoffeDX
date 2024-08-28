@@ -69,11 +69,10 @@ namespace CoffeDX
         {
             return CoffeDX.Database.Oracle.getOnlineConnection(conn =>
             {
-
                 try
                 {
                     var command = new OracleCommand(_query, (OracleConnection)conn);
-                    command.CommandTimeout = 0;
+                    command.CommandTimeout = 120;
                     return command.ExecuteNonQuery();
                 }
                 catch (Exception ex)
@@ -177,9 +176,8 @@ namespace CoffeDX
                 {
                     connection.Open();
                     var command = new OracleCommand(_update.GetQuery(_select.whereList.ToString()), connection);
-                    command.BindByName = true;
-
                     var lst = _update.GetParams();
+                    if(lst!=null && lst.Count > 0) command.BindByName = true;
                     for (int i = 0; i < lst.Count; i++)
                         command.Parameters.Add(lst.GetKey(i).ToString(), lst[lst.GetKey(i).ToString()] ?? DBNull.Value);
                     command.CommandTimeout = 120;
@@ -665,7 +663,8 @@ namespace CoffeDX
             }
             public string GetQueryValue(string field)
             {
-                return $"SELECT \"{field}\" FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
+                var f = field.Contains('.') ? field : "\"{field}\"";
+                return $"SELECT {f} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
             }
         }
         private class UpdateQuery

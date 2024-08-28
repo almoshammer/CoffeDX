@@ -41,9 +41,6 @@ D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\CoffeDX.pdb
 D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\DBreeze.dll
 D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\DBreezeBased.dll
 D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.Bcl.AsyncInterfaces.dll
-D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.ConnectionInfo.dll
-D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.Smo.dll
-D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.SmoExtended.dll
 D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Oracle.ManagedDataAccess.dll
 D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\protobuf-net.dll
 D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\System.Buffers.dll
