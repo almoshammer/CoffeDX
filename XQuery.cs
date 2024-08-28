@@ -663,7 +663,7 @@ namespace CoffeDX
             }
             public string GetQueryValue(string field)
             {
-                var f = field.Contains('.') ? field : "\"{field}\"";
+                var f = field.Contains('.') ? field : $"\"{field}\"";
                 return $"SELECT {f} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList}";
             }
         }

@@ -129,23 +129,11 @@ namespace CoffeDX
         public static bool ToBool(object st)
         {
             if (st.GetType() == typeof(bool)) return (bool)st;
-            if (st == null)
-            {
-                return false;
-            }
+            if (st == null) return false;
             st = st.ToString().Trim().ToLower();
-            if (st.ToString() == "1" || st.ToString() == "true")
-            {
-                return true;
-            }
-            if (st.ToString() == "0" || st.ToString() == "false")
-            {
-                return true;
-            }
-            if (st.ToString().Length == 0)
-            {
-                return false;
-            }
+            if (st.ToString() == "1" || st.ToString() == "true") return true;
+            if (st.ToString() == "0" || st.ToString() == "false") return false;
+            if (st.ToString().Length == 0) return false;
 
             return Convert.ToBoolean(st);
         }
