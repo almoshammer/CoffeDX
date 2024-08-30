@@ -53,13 +53,6 @@ D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\System.Text.Encodings.Web.dll
 D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\System.Text.Json.dll
 D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\System.Threading.Tasks.Extensions.dll
 D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\System.ValueTuple.dll
-D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.SqlClrProvider.dll
-D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.Management.Sdk.Sfc.dll
-D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.SqlEnum.dll
-D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.Dmf.Common.dll
-D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.Diagnostics.STrace.dll
-D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.ServiceBrokerEnum.dll
-D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.RegSvrEnum.dll
 D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\DBreeze.xml
 D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\DBreezeBased.xml
 D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.Bcl.AsyncInterfaces.xml

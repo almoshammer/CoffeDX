@@ -1,4 +1,5 @@
 ﻿using CoffeDX.Query.Mapping;
+using CoffeDX.Shared;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
 using Oracle.ManagedDataAccess.Client;
@@ -6,12 +7,15 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace CoffeDX.Database
 {
@@ -122,31 +126,106 @@ namespace CoffeDX.Database
                 }
             });
         }
-        public static bool BackupDB(string _databaseName, string path, DVoid action, bool isAsync = false)
+        public static bool BackupDB(
+            string PDate ,
+            string UserName,
+            string APP,
+            string JOPNAME,
+            string LogFileName,
+            string DMPFileName,
+            string BackupDirectory,
+            string DIRNAME)
+        {          
+
+            if (!executeOneOracleSQL($"CREATE OR REPLACE DIRECTORY {DIRNAME} AS '{BackupDirectory}'")
+                || !executeOneOracleSQL($"GRANT READ, WRITE ON DIRECTORY MIGDMP3 TO {UserName}")
+                || !executeOneOracleSQL($"GRANT export full database TO {UserName}")) return false;
+            return executeOneOracleSQL(
+                "DECLARE\n" +
+                    "h1 number;\n" +
+                    "s varchar2(1000);\n" +
+                    "errorvarchar varchar2(100):= 'ERROR';\n" +
+                    "tryGetStatus number := 0;\n" +
+                    "success_with_info EXCEPTION;\n" +
+                    "PRAGMA EXCEPTION_INIT(success_with_info, -31627);\n" +
+                "BEGIN\n" +
+                    "\th1 := dbms_datapump.open (operation => 'EXPORT', job_mode => 'SCHEMA', job_name => '" + JOPNAME + "', version => 'COMPATIBLE');\n" +
+                    "\ttryGetStatus := 1;\n" +
+                    "\tdbms_datapump.set_parallel(handle => h1, degree => 1);\n" +
+                    "\tdbms_datapump.add_file(handle => h1, filename => '" + DMPFileName + $"', directory => '{DIRNAME}', filetype => 3);\n" +
+                    "\tdbms_datapump.set_parameter(handle => h1, name => 'KEEP_MASTER', value => 1);\n" +
+                    "\tdbms_datapump.metadata_filter(handle => h1, name => 'SCHEMA_EXPR', value => 'IN(''" + UserName + "'')');\n" +
+                    "\tdbms_datapump.add_file(handle => h1, filename => '" + DMPFileName + $"', directory => '{DIRNAME}', filesize => '100M', filetype => 1);\n" +
+                    "\tdbms_datapump.set_parameter(handle => h1, name => 'INCLUDE_METADATA', value => 1);\n" +
+                    "\tdbms_datapump.set_parameter(handle => h1, name => 'DATA_ACCESS_METHOD', value => 'AUTOMATIC');\n" +
+                    "\tdbms_datapump.set_parameter(handle => h1, name => 'ESTIMATE', value => 'BLOCKS');\n" +
+                    "\tdbms_datapump.start_job(handle => h1, skip_current => 0, abort_step => 0);\n" +
+                    "\tdbms_datapump.detach(handle => h1);\n" +
+                    "\terrorvarchar := 'NO_ERROR';\n" +
+                "EXCEPTION\n" +
+                    "WHEN OTHERS THEN\n" +
+                    "BEGIN\n" +
+                        "IF((errorvarchar = 'ERROR')AND(tryGetStatus = 1)) THEN\n" +
+                        "DBMS_DATAPUMP.DETACH(h1);\n" +
+                        "END IF;\n" +
+                    "EXCEPTION\n" +
+                    "WHEN OTHERS THEN\n" +
+                        "NULL;\n" +
+                    "END;\n" +
+                 "RAISE;\n" +
+            "END;\n" +
+            "\n\n");
+        }
+        private static bool executeOneOracleSQL(string sql)
         {
-            return getOnlineConnection(conn =>
+            var connStr = $"DATA SOURCE={ServerName}; USER ID=system;PASSWORD={Password}";
+
+            using (var connection = new OracleConnection(connStr))
             {
+                connection.Open();
+                bool executionComplete = false;
                 try
                 {
-                    ServerConnection sc = new ServerConnection((conn as SqlConnection));
-                    Server server = new Server(sc);
-                    Backup destination = new Backup();
-                    destination.Action = BackupActionType.Database;
-                    destination.Database = _databaseName;
-                    BackupDeviceItem deviceItem = new BackupDeviceItem(path, DeviceType.File);
-                    destination.Devices.Add(deviceItem);
-                    server.KillAllProcesses(_databaseName);
-                    server.KillDatabase(_databaseName);
-                    if (isAsync) destination.SqlBackupAsync(server);
-                    else destination.SqlBackup(server);
-                    return true;
+                    using (OracleTransaction transaction = (connection).BeginTransaction(IsolationLevel.ReadCommitted))
+                    {
+                        using (OracleCommand command = new OracleCommand())
+                        {
+                            command.Connection = (connection);
+                            command.CommandType = CommandType.Text;
+                            command.CommandTimeout = 120;
+                            command.Transaction = transaction;
+
+                            command.CommandText = sql;
+                            //command.ArrayBindCount = dataRows;
+                            command.Prepare();
+                            try
+                            {
+                                command.ExecuteNonQuery();
+                                transaction.Commit();
+                                executionComplete = true;
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex.Message);
+                                transaction.Rollback();
+                            }
+                            command.Parameters.Clear();
+                            return executionComplete;
+                        }
+                    }
                 }
-                catch (OracleException ex)
+                catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message);
-                    return false;
+                    System.Windows.Forms.MessageBox.Show(ex.Message);
                 }
-            });
+                finally
+                {
+                    connection.Close();
+                    connection.Dispose();
+                }
+                return executionComplete;
+
+            }
         }
         public async static Task<T> getConnection<T>(DObject<T> @object, string DatabaseName)
         {
