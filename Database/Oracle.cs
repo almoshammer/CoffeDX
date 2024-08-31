@@ -117,7 +117,7 @@ namespace CoffeDX.Database
     import_name_        VARCHAR2(50) := '{JOPNAME}';
     dump_file_          VARCHAR2(50) := '{DMPFileName}';
     log_file_           VARCHAR2(50) := '{LogFileName}';
-    directory_          VARCHAR2(50) := '{BackupDirectory}'; 
+    directory_          VARCHAR2(50) := '{DIRNAME}'; 
  BEGIN
     dp_handle_:= dbms_datapump.Open(operation=> 'IMPORT',job_mode=> 'TABLE',job_name=> import_name_,version=> 'COMPATIBLE');
     dbms_datapump.add_file(handle=> dp_handle_,filename=>dump_file_,directory=>directory_,filetype=>1);
@@ -158,7 +158,7 @@ namespace CoffeDX.Database
                 "BEGIN\n" +
                     "\th1 := dbms_datapump.open (operation => 'EXPORT', job_mode => 'SCHEMA', job_name => '" + JOPNAME + "', version => 'COMPATIBLE');\n" +
                     "\ttryGetStatus := 1;\n" +
-                    "\tdbms_datapump.set_parallel(handle => h1, degree => 16);\n" +
+                    "\tdbms_datapump.set_parallel(handle => h1, degree => 1);\n" +
                     "\tdbms_datapump.add_file(handle => h1, filename => '" + LogFileName + $"', directory => '{DIRNAME}', filetype => 3);\n" +
                     "\tdbms_datapump.set_parameter(handle => h1, name => 'KEEP_MASTER', value => 1);\n" +
                     "\tdbms_datapump.metadata_filter(handle => h1, name => 'SCHEMA_EXPR', value => 'IN(''" + UserName + "'')');\n" +
