@@ -96,36 +96,43 @@ namespace CoffeDX.Database
                 return @object(null);
             }
         }
-        public static bool RestoreDB(string _databaseName, string path, DVoid action, bool isAsync = false)
+        public static bool RestoreDB(
+            string PDate,
+            string UserName,
+            string APP,
+            string JOPNAME,
+            string LogFileName,
+            string DMPFileName,
+            string BackupDirectory,
+            string DIRNAME)
         {
-            return getOnlineConnection(conn =>
-            {
 
-                try
-                {
-                    ServerConnection sc = new ServerConnection((conn as SqlConnection));
-                    Server server = new Server(sc);
-                    Restore destination = new Restore();
-                    destination.Action = RestoreActionType.Database;
-                    destination.Database = _databaseName;
-                    BackupDeviceItem deviceItem = new BackupDeviceItem(path, DeviceType.File);
-                    destination.Devices.Add(deviceItem);
-                    destination.ReplaceDatabase = true;
-                    //  destination.NoRecovery = true;
-                    // destination.NoRewind = true;
-                    server.KillAllProcesses(_databaseName);
-                    server.KillDatabase(_databaseName);
-                    if (isAsync) destination.SqlRestoreAsync(server);
-                    else destination.SqlRestore(server);
-                    return true;
-                }
-                catch (OracleException ex)
-                {
-                    MessageBox.Show(ex.Message);
-                    return false;
-                }
-            });
+            if (!executeOneOracleSQL($"CREATE OR REPLACE DIRECTORY {DIRNAME} AS '{BackupDirectory}'")
+                || !executeOneOracleSQL($"GRANT READ, WRITE ON DIRECTORY {DIRNAME} TO {UserName}")
+                || !executeOneOracleSQL($"GRANT EXPORT FULL DATABASE TO {UserName}")) return false;
+
+            return executeOneOracleSQL($@"
+ DECLARE
+    dp_handle_          NUMBER; 
+    import_name_        VARCHAR2(50) := '{JOPNAME}';
+    dump_file_          VARCHAR2(50) := '{DMPFileName}';
+    log_file_           VARCHAR2(50) := '{LogFileName}';
+    directory_          VARCHAR2(50) := '{BackupDirectory}'; 
+ BEGIN
+    dp_handle_:= dbms_datapump.Open(operation=> 'IMPORT',job_mode=> 'TABLE',job_name=> import_name_,version=> 'COMPATIBLE');
+    dbms_datapump.add_file(handle=> dp_handle_,filename=>dump_file_,directory=>directory_,filetype=>1);
+    dbms_datapump.add_file(handle=> dp_handle_,filename=>log_file_,directory=>directory_,filetype=>3);   
+    dbms_datapump.set_parallel(handle => dp_handle_, degree => 1);
+    dbms_datapump.set_parameter(dp_handle_, 'TABLE_EXISTS_ACTION', 'REPLACE');
+    dbms_datapump.Start_Job(dp_handle_);
+    dbms_datapump.detach(dp_handle_);
+ EXCEPTION
+    WHEN OTHERS THEN
+      dbms_datapump.detach(dp_handle_);
+      RAISE;
+ END;  ");
         }
+
         public static bool BackupDB(
             string PDate ,
             string UserName,
@@ -134,12 +141,12 @@ namespace CoffeDX.Database
             string LogFileName,
             string DMPFileName,
             string BackupDirectory,
-            string DIRNAME)
-        {          
+            string DIRNAME){          
 
             if (!executeOneOracleSQL($"CREATE OR REPLACE DIRECTORY {DIRNAME} AS '{BackupDirectory}'")
-                || !executeOneOracleSQL($"GRANT READ, WRITE ON DIRECTORY MIGDMP3 TO {UserName}")
-                || !executeOneOracleSQL($"GRANT export full database TO {UserName}")) return false;
+                || !executeOneOracleSQL($"GRANT READ, WRITE ON DIRECTORY {DIRNAME} TO {UserName}")
+                || !executeOneOracleSQL($"GRANT EXPORT FULL DATABASE TO {UserName}")) return false;
+
             return executeOneOracleSQL(
                 "DECLARE\n" +
                     "h1 number;\n" +
@@ -151,8 +158,8 @@ namespace CoffeDX.Database
                 "BEGIN\n" +
                     "\th1 := dbms_datapump.open (operation => 'EXPORT', job_mode => 'SCHEMA', job_name => '" + JOPNAME + "', version => 'COMPATIBLE');\n" +
                     "\ttryGetStatus := 1;\n" +
-                    "\tdbms_datapump.set_parallel(handle => h1, degree => 1);\n" +
-                    "\tdbms_datapump.add_file(handle => h1, filename => '" + DMPFileName + $"', directory => '{DIRNAME}', filetype => 3);\n" +
+                    "\tdbms_datapump.set_parallel(handle => h1, degree => 16);\n" +
+                    "\tdbms_datapump.add_file(handle => h1, filename => '" + LogFileName + $"', directory => '{DIRNAME}', filetype => 3);\n" +
                     "\tdbms_datapump.set_parameter(handle => h1, name => 'KEEP_MASTER', value => 1);\n" +
                     "\tdbms_datapump.metadata_filter(handle => h1, name => 'SCHEMA_EXPR', value => 'IN(''" + UserName + "'')');\n" +
                     "\tdbms_datapump.add_file(handle => h1, filename => '" + DMPFileName + $"', directory => '{DIRNAME}', filesize => '100M', filetype => 1);\n" +
@@ -176,6 +183,7 @@ namespace CoffeDX.Database
             "END;\n" +
             "\n\n");
         }
+     
         private static bool executeOneOracleSQL(string sql)
         {
             var connStr = $"DATA SOURCE={ServerName}; USER ID=system;PASSWORD={Password}";
