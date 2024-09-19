@@ -107,8 +107,8 @@ namespace CoffeDX.Database
         {
             try
             {
-                executeOneOracleSQL($@"CREATE USER {Username} IDENTIFIED BY {Password};");
-                executeOneOracleSQL($@"GRANT ALL PRIVILEGES TO {Username};");
+                executeOneOracleSQL($@"CREATE USER {Username} IDENTIFIED BY {Password}");
+                executeOneOracleSQL($@"GRANT ALL PRIVILEGES TO {Username}");
                 return true;
             }
             catch(Exception e)
