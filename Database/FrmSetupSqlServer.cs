@@ -33,19 +33,19 @@ namespace CoffeDX.Database
 
         private void btnReconnect_Click(object sender, EventArgs e)
         {
-            if(cmbServers.SelectedIndex < 0 || string.IsNullOrWhiteSpace(cmbServers.Text))
-            {
-                MessageBox.Show("يرجى تحديد اسم السيرفر");
-                return;
-            }
-            SQLServer.ServerName = cmbServers.Text;
-            this.Cursor = Cursors.WaitCursor;
-            Close();
-            SQLServer.getConnection <DKeyValue>(res =>
-            {
+        //    if(cmbServers.SelectedIndex < 0 || string.IsNullOrWhiteSpace(cmbServers.Text))
+        //    {
+        //        MessageBox.Show("يرجى تحديد اسم السيرفر");
+        //        return;
+        //    }
+        //    SQLServer.ServerName = cmbServers.Text;
+        //    this.Cursor = Cursors.WaitCursor;
+        //    Close();
+        //    SQLServer.getConnection <DKeyValue>(res =>
+        //    {
 
-                return new DKeyValue("","");
-            });
+        //        return new DKeyValue("","");
+        //    });
         }
 
     }

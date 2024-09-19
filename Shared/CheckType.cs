@@ -155,7 +155,7 @@ namespace CoffeDX.Shared
                             object new_obj = ChangeType(value, prop.PropertyType);
                             prop.SetValue(entity, new_obj);
                         }
-                        catch (Exception ex)
+                        catch
                         {
 
                         }

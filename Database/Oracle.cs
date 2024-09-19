@@ -15,6 +15,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace CoffeDX.Database
@@ -64,18 +65,58 @@ namespace CoffeDX.Database
 
         public static bool flag_check_connection = true;
 
-        private static OracleConnection conn;
-        public static void closeConnection()
-        {
-            if (conn != null && conn.State != ConnectionState.Closed)
-                conn.Close();
-        }
-        public static Task<T> getConnection<T>(DObject<T> @object)
-        {
+        //public static Task<T> getConnection<T>(DObject<T> @object)
+        //{
 
-            return getConnection(@object, DBName);
+        //    return getConnection(@object, DBName);
+        //}
+        public enum SERVICE_STATUS
+        {
+            NONE,
+            FAILURE,
+            AVAILABLE,
+            NOUSER,
         }
-
+        public static SERVICE_STATUS CheckService()
+        {
+            var status = SERVICE_STATUS.NONE;
+            try
+            {
+                var connStr = $"DATA SOURCE={ServerName}; USER ID=system;PASSWORD={Password}";
+                using (var connection = new OracleConnection(connStr))
+                {
+                    connection.Open();
+                    if (connection.State == ConnectionState.Open)
+                    {
+                       
+                        var q = $@"SELECT COUNT(*) FROM dba_users WHERE username='{Username.ToUpper()}'";
+                        var cmd = new OracleCommand(q,connection);
+                        if (DConvert.ToInt(cmd.ExecuteScalar()) > 0) status = SERVICE_STATUS.AVAILABLE;
+                        else status = SERVICE_STATUS.NOUSER;
+                    }
+                    connection.Close();
+                }
+            }
+            catch
+            {
+                status = SERVICE_STATUS.FAILURE;
+            }
+            return status;
+        }
+        public static bool CreateUser()
+        {
+            try
+            {
+                executeOneOracleSQL($@"CREATE USER {Username} IDENTIFIED BY {Password};");
+                executeOneOracleSQL($@"GRANT ALL PRIVILEGES TO {Username};");
+                return true;
+            }
+            catch(Exception e)
+            {
+                MessageBox.Show(e.Message,"Configure User Failure(-1)");
+                return false;
+            }
+        }
         public static T getOnlineConnection<T>(DObject<T> @object)
         {
             var connStr = $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}";
@@ -134,14 +175,15 @@ namespace CoffeDX.Database
         }
 
         public static bool BackupDB(
-            string PDate ,
+            string PDate,
             string UserName,
             string APP,
             string JOPNAME,
             string LogFileName,
             string DMPFileName,
             string BackupDirectory,
-            string DIRNAME){          
+            string DIRNAME)
+        {
 
             if (!executeOneOracleSQL($"CREATE OR REPLACE DIRECTORY {DIRNAME} AS '{BackupDirectory}'")
                 || !executeOneOracleSQL($"GRANT READ, WRITE ON DIRECTORY {DIRNAME} TO {UserName}")
@@ -183,7 +225,7 @@ namespace CoffeDX.Database
             "END;\n" +
             "\n\n");
         }
-     
+
         private static bool executeOneOracleSQL(string sql)
         {
             var connStr = $"DATA SOURCE={ServerName}; USER ID=system;PASSWORD={Password}";
@@ -235,64 +277,66 @@ namespace CoffeDX.Database
 
             }
         }
-        public async static Task<T> getConnection<T>(DObject<T> @object, string DatabaseName)
-        {
-            var dbname = DBName;
-            if (!string.IsNullOrWhiteSpace(DatabaseName)) dbname = DatabaseName;
+        //public async static Task<T> getConnection<T>(DObject<T> @object, string DatabaseName)
+        //{
+        //    var dbname = DBName;
+        //    if (!string.IsNullOrWhiteSpace(DatabaseName)) dbname = DatabaseName;
 
-            if (string.IsNullOrWhiteSpace(dbname))
-            {
-                MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
-                return @object(conn);
-            }
-            var connStr = $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}";
+        //    if (string.IsNullOrWhiteSpace(dbname))
+        //    {
+        //        MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
+        //        return @object(conn);
+        //    }
+        //    var connStr = $"DATA SOURCE={ServerName}; USER ID={Username};PASSWORD={Password}";
 
-            try
-            {
-                //if (conn == null || flag_check_connection == true)
-                //{
-                //    conn = new OracleConnection(connStr);
-                //    conn.StateChange += (s, e) =>
-                //    {
-                //        if (e.CurrentState == ConnectionState.Broken)
-                //        {
-                //            //!error
-                //        }
-                //    };
-                //    flag_check_connection = false;
-                //}
-                //if (conn?.State == ConnectionState.Open)
-                //{
-                //    // ExHanlder.handle(null, ExHanlder.ERR.INS, ExHanlder.PROMP_TYPE.HID, _00CONSTANT.CONN_OPENED);
-                //    conn?.Close();
-                //}
-                //if (conn?.State == System.Data.ConnectionState.Closed) conn?.OpenAsync();
+        //    try
+        //    {
+        //        //if (conn == null || flag_check_connection == true)
+        //        //{
+        //        //    conn = new OracleConnection(connStr);
+        //        //    conn.StateChange += (s, e) =>
+        //        //    {
+        //        //        if (e.CurrentState == ConnectionState.Broken)
+        //        //        {
+        //        //            //!error
+        //        //        }
+        //        //    };
+        //        //    flag_check_connection = false;
+        //        //}
+        //        //if (conn?.State == ConnectionState.Open)
+        //        //{
+        //        //    // ExHanlder.handle(null, ExHanlder.ERR.INS, ExHanlder.PROMP_TYPE.HID, _00CONSTANT.CONN_OPENED);
+        //        //    conn?.Close();
+        //        //}
+        //        //if (conn?.State == System.Data.ConnectionState.Closed) conn?.OpenAsync();
 
-                //var result = @object(conn);
-                ////dynamic result = Activator.CreateInstance<T>();
-                ////using (var cc = new OracleConnection(connStr))
-                ////{
-                ////    cc.Open();
-                ////    result = @object(cc);
-                ////}
-                //conn.Close();
+        //        //var result = @object(conn);
+        //        ////dynamic result = Activator.CreateInstance<T>();
+        //        ////using (var cc = new OracleConnection(connStr))
+        //        ////{
+        //        ////    cc.Open();
+        //        ////    result = @object(cc);
+        //        ////}
+        //        //conn.Close();
 
-                dynamic result = new ExpandoObject();
-                using (var conn = new OracleConnection(connStr))
-                {
-                    await conn.OpenAsync();
-                    result = @object(conn);
-                }
-                return result;
-            }
-            catch (System.Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-                // ExHanlder.handle(ex, ExHanlder.ERR.APP, ExHanlder.PROMP_TYPE.MSG, _00CONSTANT.DB_CONN_ERROR1);
-                // Application.Exit();
-                return @object(conn);
-            }
-        }
+        //        dynamic result = new ExpandoObject();
+        //        using (var conn = new OracleConnection(connStr))
+        //        {
+        //            await conn.OpenAsync();
+        //            result = @object(conn);
+        //        }
+        //        return result;
+        //    }
+        //    catch (System.Exception ex)
+        //    {
+        //        MessageBox.Show(ex.Message);
+        //        // ExHanlder.handle(ex, ExHanlder.ERR.APP, ExHanlder.PROMP_TYPE.MSG, _00CONSTANT.DB_CONN_ERROR1);
+        //        // Application.Exit();
+        //        return @object(conn);
+        //    }
+        //}
+       
+        
         public static void Migrate(Assembly assembly, bool allowDrop = false)
         {
             var tables = new StringBuilder();

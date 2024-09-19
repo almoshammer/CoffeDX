@@ -74,3 +74,13 @@ D:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.csproj.CoreCompileInputs.
 D:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.csproj.Up2Date
 D:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.dll
 D:\STORAGE_PROJECTS\winforms\CoffeDX\obj\Debug\CoffeDX.pdb
+D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.ConnectionInfo.dll
+D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.Smo.dll
+D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.SmoExtended.dll
+D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.SqlClrProvider.dll
+D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.Management.Sdk.Sfc.dll
+D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.SqlEnum.dll
+D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.Dmf.Common.dll
+D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.Diagnostics.STrace.dll
+D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.ServiceBrokerEnum.dll
+D:\STORAGE_PROJECTS\winforms\CoffeDX\bin\Debug\Microsoft.SqlServer.RegSvrEnum.dll

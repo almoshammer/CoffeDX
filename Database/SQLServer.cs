@@ -52,17 +52,17 @@ namespace CoffeDX.Database
 
         public static bool flag_check_connection = true;
 
-        private static SqlConnection conn;
-        public static void closeConnection()
-        {
-            if (conn != null && conn.State != ConnectionState.Closed)
-                conn.Close();
-        }
-        public static Task<T> getConnection<T>(DObject<T> @object)
-        {
+        //private static SqlConnection conn;
+        //public static void closeConnection()
+        //{
+        //    if (conn != null && conn.State != ConnectionState.Closed)
+        //        conn.Close();
+        //}
+        //public static Task<T> getConnection<T>(DObject<T> @object)
+        //{
 
-            return getConnection(@object, DBName);
-        }
+        //    return getConnection(@object, DBName);
+        //}
         public static T getOnlineConnection<T>(DObject<T> @object)
         {
             return getOnlineConnection(@object, DBName);
@@ -153,67 +153,67 @@ namespace CoffeDX.Database
                 }
             }, _databaseName);
         }
-        public async static Task<T> getConnection<T>(DObject<T> @object, string DatabaseName)
-        {
-            var dbname = DBName;
-            if (!string.IsNullOrWhiteSpace(DatabaseName)) dbname = DatabaseName;
+        //public async static Task<T> getConnection<T>(DObject<T> @object, string DatabaseName)
+        //{
+        //    var dbname = DBName;
+        //    if (!string.IsNullOrWhiteSpace(DatabaseName)) dbname = DatabaseName;
 
-            if (string.IsNullOrWhiteSpace(dbname))
-            {
-                MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
-                return @object(conn);
-            }
-            string connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=SSPI;Pooling=false;";
-            if (AUTH_TYPE == AUTHTYPE.LOCAL)
-                connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=SSPI;Pooling=false;";
-            else if (AUTH_TYPE == AUTHTYPE.AUTH)
-                connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=SSPI;Pooling=false; ";//Connection Lifetime=100;
-            try
-            {
-                //if (conn == null || flag_check_connection == true)
-                //{
-                //    conn = new SqlConnection(connStr);
-                //    conn.StateChange += (s, e) =>
-                //    {
-                //        if (e.CurrentState == ConnectionState.Broken)
-                //        {
-                //            //!error
-                //        }
-                //    };
-                //    flag_check_connection = false;
-                //}
-                //if (conn?.State == ConnectionState.Open)
-                //{
-                //    // ExHanlder.handle(null, ExHanlder.ERR.INS, ExHanlder.PROMP_TYPE.HID, _00CONSTANT.CONN_OPENED);
-                //    conn?.Close();
-                //}
-                //if (conn?.State == System.Data.ConnectionState.Closed) conn?.OpenAsync();
+        //    if (string.IsNullOrWhiteSpace(dbname))
+        //    {
+        //        MessageBox.Show("عطل فني - (You need to set database name) \n يرجى التواصل مع الدعم الفني");
+        //        return @object(conn);
+        //    }
+        //    string connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=SSPI;Pooling=false;";
+        //    if (AUTH_TYPE == AUTHTYPE.LOCAL)
+        //        connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=SSPI;Pooling=false;";
+        //    else if (AUTH_TYPE == AUTHTYPE.AUTH)
+        //        connStr = $"Data Source={ServerName};Initial Catalog={dbname};Integrated Security=SSPI;Pooling=false; ";//Connection Lifetime=100;
+        //    try
+        //    {
+        //        //if (conn == null || flag_check_connection == true)
+        //        //{
+        //        //    conn = new SqlConnection(connStr);
+        //        //    conn.StateChange += (s, e) =>
+        //        //    {
+        //        //        if (e.CurrentState == ConnectionState.Broken)
+        //        //        {
+        //        //            //!error
+        //        //        }
+        //        //    };
+        //        //    flag_check_connection = false;
+        //        //}
+        //        //if (conn?.State == ConnectionState.Open)
+        //        //{
+        //        //    // ExHanlder.handle(null, ExHanlder.ERR.INS, ExHanlder.PROMP_TYPE.HID, _00CONSTANT.CONN_OPENED);
+        //        //    conn?.Close();
+        //        //}
+        //        //if (conn?.State == System.Data.ConnectionState.Closed) conn?.OpenAsync();
 
-                //var result = @object(conn);
-                ////dynamic result = Activator.CreateInstance<T>();
-                ////using (var cc = new SqlConnection(connStr))
-                ////{
-                ////    cc.Open();
-                ////    result = @object(cc);
-                ////}
-                //conn.Close();
+        //        //var result = @object(conn);
+        //        ////dynamic result = Activator.CreateInstance<T>();
+        //        ////using (var cc = new SqlConnection(connStr))
+        //        ////{
+        //        ////    cc.Open();
+        //        ////    result = @object(cc);
+        //        ////}
+        //        //conn.Close();
 
-                dynamic result = new ExpandoObject();
-                using (var conn = new SqlConnection(connStr))
-                {
-                    await conn.OpenAsync();
-                    result = @object(conn);
-                }
-                return result;
-            }
-            catch (System.Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-                // ExHanlder.handle(ex, ExHanlder.ERR.APP, ExHanlder.PROMP_TYPE.MSG, _00CONSTANT.DB_CONN_ERROR1);
-                // Application.Exit();
-                return @object(conn);
-            }
-        }
+        //        dynamic result = new ExpandoObject();
+        //        using (var conn = new SqlConnection(connStr))
+        //        {
+        //            await conn.OpenAsync();
+        //            result = @object(conn);
+        //        }
+        //        return result;
+        //    }
+        //    catch (System.Exception ex)
+        //    {
+        //        MessageBox.Show(ex.Message);
+        //        // ExHanlder.handle(ex, ExHanlder.ERR.APP, ExHanlder.PROMP_TYPE.MSG, _00CONSTANT.DB_CONN_ERROR1);
+        //        // Application.Exit();
+        //        return @object(conn);
+        //    }
+        //}
         public static void Migrate(Assembly assembly, bool allowDrop = false)
         {
             StringBuilder tables = new StringBuilder();

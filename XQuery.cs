@@ -290,7 +290,6 @@ namespace CoffeDX
             {
                 message = "يجب تحديد اسم جدول";
                 throw new Exception(message);
-                return 0;
             }
 
             try
@@ -530,14 +529,14 @@ namespace CoffeDX
         public long Count()
         {
             var _query = _select.GetQueryCount();
-            var count = 0l;
+            var count = 0;
             try
             {
                 using (var connection = new OracleConnection(CoffeDX.Database.Oracle.GetConnectionString()))
                 {
                     connection.Open();
                     var command = new OracleCommand(_query, connection);
-                    count = DConvert.ToLong(command.ExecuteScalar());
+                    count = DConvert.ToInt(command.ExecuteScalar());
                 }
             }
             catch (OracleException e)
