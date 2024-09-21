@@ -164,13 +164,6 @@ namespace CoffeDX.Shared
 
                 if (value == null) throw new Exception("نمط بيانات غير معرف");
             }
-            //int
-            //datetime
-            //if (prop.PropertyType==typeof(SqlDateTime))
-            //{
-            //    prop.SetValue(entity,toSqlDateTime(value));
-            //    return;
-            //}
         }
         public static bool hasProperty(Type type, string name)
         {
