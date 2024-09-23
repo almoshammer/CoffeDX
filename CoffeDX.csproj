@@ -138,9 +138,6 @@
     <Compile Include="Shared\IQuery.cs" />
     <Compile Include="Shared\NumberToWord.cs" />
     <Compile Include="Shared\_Constants.cs" />
-    <Compile Include="Test\BaseModel.cs" />
-    <Compile Include="Test\ParentModel.cs" />
-    <Compile Include="Test\TestModel.cs" />
     <Compile Include="XQuery.cs" />
     <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
   </ItemGroup>
@@ -163,6 +160,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Test\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
