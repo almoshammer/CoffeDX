@@ -96,6 +96,15 @@ namespace CoffeDX.Database
         {
             return Db.Select<string, int>("global", key).Value;
         }
+        public static void SetDouble(string key, double value)
+        {
+            Db.Insert("global", key, value);
+            Db.Commit();
+        }
+        public static double GetDouble(string key)
+        {
+            return Db.Select<string, double>("global", key).Value;
+        }
         public static void GetProps(ref object obj)
         {
             try
