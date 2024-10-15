@@ -654,7 +654,7 @@ namespace CoffeDX
             public string GetQueryFirst()
             {
                 if (this.fields.Count == 0) this.fields.Add("*");
-                return $"SELECT {string.Join(",", this.fields)} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList} {(whereList.Length > 4 ? " AND" : " WHERE")} ROWNUM=1";
+                return $"SELECT {string.Join(",", this.fields)} FROM {string.Join(",", tables)} {innerJoinList} {leftJoinList} {whereList} {(whereList.Length > 4 ? " AND" : " WHERE")} ROWNUM=1 {(orderByList.Count == 0 ? "" : "ORDER BY")} {string.Join(",", orderByList)}";
             }
             public string GetQueryCount()
             {
